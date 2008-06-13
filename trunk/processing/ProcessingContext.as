@@ -1,11 +1,15 @@
 package processing {
 	import com.gamemeal.html.Canvas;
 	import com.gamemeal.graphics.ImageData;
-	import mx.controls.Alert;
 	import processing.Processing;
 	import processing.AniSprite;
+	import processing.ArrayList;
+	import processing.Point;
+	import processing.Random;
 	import flash.utils.setInterval;
 	import flash.utils.clearInterval;
+	import flash.net.navigateToURL;
+	import flash.net.URLRequest;
 	import asas.*;
 
 	dynamic public class ProcessingContext {
@@ -67,6 +71,7 @@ package processing {
 		private var curTextFont:String = 'Arial';
 		private var getLoaded;
 		private var start:Number;
+		private var pixels:Array = [];
 		
 		// mouse position vars
 //[TODO] read-only these?
@@ -88,6 +93,48 @@ package processing {
 		// canvas width/height
 		public function get width():Number { return pObj.canvas.width; }
 		public function get height():Number { return pObj.canvas.height; }
+		
+		// constructor
+		public function ProcessingContext(_pObj:Processing):void {
+			// save processing object
+			pObj = _pObj;
+		
+			// initialize state variables
+			curContext = pObj.canvas.getContext('2d');
+			start = (new Date).getTime();
+
+/*
+//******************************************************************************
+
+var document = {
+	createElement: function (name) {
+		if (name == 'canvas')
+			return new Canvas('canvas' + Math.random(), 1000, 1000);
+	},
+	getElementById: function (id) {
+		//[TODO] uh
+	},
+	addEventListener: function (name, func, bubble) {
+		//[TODO] uh
+	}
+};
+
+var window = {
+	location: '' //[TODO] uh
+};
+
+// changes: fixed RegExp.leftContext, .rightContext
+// wrapped some regex's (that Flash no like for some reason)
+// fixed log() function
+// removed redundant labels from set, get, init, and color functions (compiler errors)
+
+//******************************************************************************
+
+
+	var p:ProcessingContext = this;
+	
+	var curElement:Canvas = pObj.canvas; */
+		}
 		
 		// color conversion
 		public function color(... args):String {
@@ -375,182 +422,24 @@ package processing {
 				curContext.restore();
 			}*/
 		}
-		
-		//**************************************************************
-		//**************************************************************
-		//**************************************************************
 	
-		public function ProcessingContext(_pObj:Processing):void {
-			// save processing object
-			pObj = _pObj;
-		
-			// initialize state variables
-			curContext = pObj.canvas.getContext('2d');
-			start = (new Date).getTime();
-
-//******************************************************************************
-
-var document = {
-	createElement: function (name) {
-		if (name == 'canvas')
-			return new Canvas('canvas' + Math.random(), 1000, 1000);
-	},
-	getElementById: function (id) {
-		//[TODO] uh
-	},
-	addEventListener: function (name, func, bubble) {
-		//[TODO] uh
-	}
-};
-
-var window = {
-	location: '' //[TODO] uh
-};
-
-// changes: fixed RegExp.leftContext, .rightContext
-// wrapped some regex's (that Flash no like for some reason)
-// fixed log() function
-// removed redundant labels from set, get, init, and color functions (compiler errors)
-
-//******************************************************************************
-
-
-	var p:ProcessingContext = this;
-	
-	var curElement:Canvas = pObj.canvas;
-	
-	
-	
-
-
-
-	
-	
-		p.char = function char( key )
+		public function char( key )
 		{
 			//return String.fromCharCode( key );
 			return key;
 		}
 	
-		p.println = function println()
+		public function println()
 		{
 	
 		}
 	
-		p.map = function map( value, istart, istop, ostart, ostop )
+		public function map( value, istart, istop, ostart, ostop )
 		{
 			return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
-		};
-	
-		String.prototype.replaceAll = function(re, replace)
-		{
-			return this.replace(new RegExp(re, "g"), replace);
-		};
-	
-		p.Point = function Point( x, y )
-		{
-			this.x = x;
-			this.y = y;
-			this.copy = function()
-			{
-				return new Point( x, y );
-			}
-		}
-	
-		p.Random = function()
-		{
-			var haveNextNextGaussian = false;
-			var nextNextGaussian;
-	
-			this.nextGaussian = function()
-			{
-				if (haveNextNextGaussian) {
-					haveNextNextGaussian = false;
-	
-					return nextNextGaussian;
-				} else {
-					var v1, v2, s;
-					do { 
-						v1 = 2 * p.random(1) - 1;	 // between -1.0 and 1.0
-						v2 = 2 * p.random(1) - 1;	 // between -1.0 and 1.0
-						s = v1 * v1 + v2 * v2;
-					} while (s >= 1 || s == 0);
-					var multiplier = Math.sqrt(-2 * Math.log(s)/s);
-					nextNextGaussian = v2 * multiplier;
-					haveNextNextGaussian = true;
-	
-					return v1 * multiplier;
-				}
-			};
-		}
-	
-		p.ArrayList = function ArrayList( size, size2, size3 )
-		{
-			var array = new Array( 0 | size );
-			
-			if ( size2 )
-			{
-				for ( var i = 0; i < size; i++ )
-				{
-					array[i] = [];
-	
-					for ( var j = 0; j < size2; j++ )
-					{
-			var a = array[i][j] = size3 ? new Array( size3 ) : 0;
-			for ( var k = 0; k < size3; k++ )
-			{
-				a[k] = 0;
-			}
-					}
-				}
-			}
-			else
-			{
-				for ( var i = 0; i < size; i++ )
-				{
-					array[i] = 0;
-				}
-			}
-			
-			array.size = function()
-			{
-				return this.length;
-			};
-			array.get = function( i )
-			{
-				return this[ i ];
-			};
-			array.remove = function( i )
-			{
-				return this.splice( i, 1 );
-			};
-			array.add = function( item )
-			{
-				for ( var i = 0; this[ i ] != undefined; i++ ) {}
-				this[ i ] = item;
-			};
-			array.clone = function()
-			{
-				var a = new ArrayList( size );
-				for ( var i = 0; i < size; i++ )
-				{
-					a[ i ] = this[ i ];
-				}
-				return a;
-			};
-			array.isEmpty = function()
-			{
-				return !this.length;
-			};
-			array.clear = function()
-			{
-				this.length = 0;
-			};
-			
-			return array;
 		}
 		
-		p.colorMode = function colorMode( mode, range1, range2, range3, range4 )
+		public function colorMode( mode, range1, range2, range3, range4 )
 		{
 			curColorMode = mode;
 	
@@ -568,17 +457,17 @@ var window = {
 	
 			if ( arguments.length == 2 )
 			{
-				p.colorMode( mode, range1, range1, range1, range1 );
+				colorMode( mode, range1, range1, range1, range1 );
 			}
 		}
 		
-		p.beginShape = function beginShape( type )
+		public function beginShape( type = POLYGON )
 		{
 			curShape = type;
 			curShapeCount = 0; 
 		}
 		
-		p.endShape = function endShape( close )
+		public function endShape( close = true )
 		{
 			if ( curShapeCount != 0 )
 			{
@@ -601,9 +490,9 @@ var window = {
 			}
 		}
 		
-		p.vertex = function vertex( x, y, x2, y2, x3, y3 )
+		public function vertex( x, y, x2 = null, y2 = null, x3 = null, y3 = null )
 		{
-			if ( curShapeCount == 0 && curShape != p.POINTS )
+			if ( curShapeCount == 0 && curShape != POINTS )
 			{
 				pathOpen = true;
 				curContext.beginPath();
@@ -611,17 +500,17 @@ var window = {
 			}
 			else
 			{
-				if ( curShape == p.POINTS )
+				if ( curShape == POINTS )
 				{
-					p.point( x, y );
+					point( x, y );
 				}
 				else if ( arguments.length == 2 )
 				{
-					if ( curShape == p.TRIANGLE_STRIP && curShapeCount == 2 )
-		{
+					if ( curShape == TRIANGLE_STRIP && curShapeCount == 2 )
+					{
 						curContext.moveTo( prevX, prevY );
 						curContext.lineTo( firstX, firstY );
-		}
+					}
 	
 					curContext.lineTo( x, y );
 				}
@@ -649,131 +538,133 @@ var window = {
 			
 			curShapeCount++;
 			
-			if ( curShape == p.LINES && curShapeCount == 2 ||
-					 (curShape == p.TRIANGLES || curShape == p.TRIANGLE_STRIP) && curShapeCount == 3 )
+			if ( curShape == LINES && curShapeCount == 2 ||
+					 (curShape == TRIANGLES || curShape == TRIANGLE_STRIP) && curShapeCount == 3 )
 			{
-				p.endShape();
+				endShape();
 			}
 	
-			if ( curShape == p.TRIANGLE_STRIP && curShapeCount == 3 )
+			if ( curShape == TRIANGLE_STRIP && curShapeCount == 3 )
 			{
 				curShapeCount = 2;
 			}
 		}
 	
-		p.curveTightness = function()
+		public function curveTightness()
 		{
 	
 		}
 	
-		// Unimplmented - not really possible with the Canvas API
-		p.curveVertex = function( x, y, x2, y2 )
+		// [TODO] Unimplmented - not really possible with the Canvas API
+		public function curveVertex( x, y, x2, y2 )
 		{
-			p.vertex( x, y, x2, y2 );
+			vertex( x, y, x2, y2 );
 		}
 	
-		p.bezierVertex = p.vertex
+		public function bezierVertex(x, y, x2, y2, x3, y3 ) {
+			return vertex(x, y, x2, y2, x3, y3 );
+		}
 		
-		p.rectMode = function rectMode( aRectMode )
+		public function rectMode( aRectMode )
 		{
 			curRectMode = aRectMode;
 		}
 	
-		p.imageMode = function()
+		public function imageMode()
 		{
 	
 		}
 		
-		p.ellipseMode = function ellipseMode( aEllipseMode )
+		public function ellipseMode( aEllipseMode )
 		{
 			curEllipseMode = aEllipseMode;
 		}
 		
-		p.dist = function dist( x1, y1, x2, y2 )
+		public function dist( x1, y1, x2, y2 )
 		{
 			return Math.sqrt( Math.pow( x2 - x1, 2 ) + Math.pow( y2 - y1, 2 ) );
 		}
 	
-		p.year = function year()
+		public function year()
 		{
 			return (new Date).getYear() + 1900;
 		}
 	
-		p.month = function month()
+		public function month()
 		{
 			return (new Date).getMonth();
 		}
 	
-		p.day = function day()
+		public function day()
 		{
 			return (new Date).getDay();
 		}
 	
-		p.hour = function hour()
+		public function hour()
 		{
 			return (new Date).getHours();
 		}
 	
-		p.minute = function minute()
+		public function minute()
 		{
 			return (new Date).getMinutes();
 		}
 	
-		p.second = function second()
+		public function second()
 		{
 			return (new Date).getSeconds();
 		}
 	
-		p.millis = function millis()
+		public function millis()
 		{
 			return (new Date).getTime() - start;
 		}
 		
-		p.ortho = function ortho()
+		public function ortho()
 		{
 		
 		}
 		
-		p.translate = function translate( x, y )
+		public function translate( x, y )
 		{
 			curContext.translate( x, y );
 		}
 		
-		p.scale = function scale( x, y )
+		public function scale( x, y )
 		{
 			curContext.scale( x, y || x );
 		}
 		
-		p.rotate = function rotate( aAngle )
+		public function rotate( aAngle )
 		{
 			curContext.rotate( aAngle );
 		}
 		
-		p.pushMatrix = function pushMatrix()
+		public function pushMatrix()
 		{
 			curContext.save();
 		}
 		
-		p.popMatrix = function popMatrix()
+		public function popMatrix()
 		{
 			curContext.restore();
 		}
 		
-		p.redraw = function redraw()
+		public function redraw()
 		{
 			if ( hasBackground )
 			{
-				p.background();
+				background();
 			}
 			
 			inDraw = true;
-			p.pushMatrix();
-			p.draw();
-			p.popMatrix();
+			pushMatrix();
+			draw();
+			popMatrix();
 			inDraw = false;
 		}
 		
-		p.loop = function loop()
+		public function loop()
 		{
 			if ( loopStarted )
 				return;
@@ -782,7 +673,7 @@ var window = {
 			{
 				try
 				{
-					p.redraw();
+					redraw();
 				}
 				catch(e)
 				{
@@ -794,13 +685,13 @@ var window = {
 			loopStarted = true;
 		}
 		
-		p.frameRate = function frameRate( aRate )
+		public function frameRate( aRate )
 		{
-	//[TODO] set stage one
+	//[TODO] set stage frame rate
 			curFrameRate = aRate;
 		}
 		
-		p.background = function background( img )
+		public function background( img = null )
 		{
 	
 			if ( arguments.length )
@@ -811,72 +702,72 @@ var window = {
 				}
 				else
 				{
-					curBackground = p.color.apply( this, arguments );
+					curBackground = color.apply( this, arguments );
 				}
 			}
 			
 	
 			if ( curBackground.hasOwnProperty('img') )
 			{
-				p.image( curBackground, 0, 0 );
+				image( curBackground, 0, 0 );
 			}
 			else
 			{
 				var oldFill = curContext.fillStyle;
 				curContext.fillStyle = curBackground + "";
-				curContext.fillRect( 0, 0, p.width, p.height );
+				curContext.fillRect( 0, 0, width, height );
 				curContext.fillStyle = oldFill;
 			}
 		}
 	
-		p.sq = function sq( aNumber )
+		public function sq( aNumber )
 		{
 			return aNumber * aNumber;
 		}
 	
-		p.sqrt = function sqrt( aNumber )
+		public function sqrt( aNumber )
 		{
 			return Math.sqrt( aNumber );
 		}
 		
-		p.int = function int( aNumber )
+		public function int( aNumber )
 		{
 			return Math.floor( aNumber );
 		}
 	
-		p.min = function min( aNumber, aNumber2 )
+		public function min( aNumber, aNumber2 )
 		{
 			return Math.min( aNumber, aNumber2 );
 		}
 	
-		p.max = function max( aNumber, aNumber2 )
+		public function max( aNumber, aNumber2 )
 		{
 			return Math.max( aNumber, aNumber2 );
 		}
 	
-		p.ceil = function ceil( aNumber )
+		public function ceil( aNumber )
 		{
 			return Math.ceil( aNumber );
 		}
 	
-		p.floor = function floor( aNumber )
+		public function floor( aNumber )
 		{
 			return Math.floor( aNumber );
 		}
 	
-		p.float = function float( aNumber )
+		public function float( aNumber )
 		{
 			return typeof aNumber == "string" ?
-		p.float( aNumber.charCodeAt(0) ) :
+		float( aNumber.charCodeAt(0) ) :
 					parseFloat( aNumber );
 		}
 	
-		p.byte = function byte( aNumber )
+		public function byte( aNumber )
 		{
 			return aNumber || 0;
 		}
 		
-		p.random = function random( aMin, aMax )
+		public function random( aMin, aMax )
 		{
 			return arguments.length == 2 ?
 				aMin + (Math.random() * (aMax - aMin)) :
@@ -884,21 +775,21 @@ var window = {
 		}
 	
 		// From: http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
-		p.noise = function( x, y, z )
+		public function noise( x, y, z )
 		{
 			return arguments.length >= 2 ?
 				PerlinNoise_2D( x, y ) :
 				PerlinNoise_2D( x, x );
 		}
 	
-		function Noise(x, y)
+		private function Noise(x, y)
 		{
 			var n = x + y * 57;
 			n = (n<<13) ^ n;
 			return Math.abs(1.0 - (((n * ((n * n * 15731) + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0));
 		}
 	
-		function SmoothedNoise(x, y)
+		private function SmoothedNoise(x, y)
 		{
 			var corners = ( Noise(x-1, y-1)+Noise(x+1, y-1)+Noise(x-1, y+1)+Noise(x+1, y+1) ) / 16;
 			var sides	 = ( Noise(x-1, y)	+Noise(x+1, y)	+Noise(x, y-1)	+Noise(x, y+1) ) /	8;
@@ -906,7 +797,7 @@ var window = {
 			return corners + sides + center;
 		}
 	
-		function InterpolatedNoise(x, y)
+		private function InterpolatedNoise(x, y)
 		{
 			var integer_X		= Math.floor(x);
 			var fractional_X = x - integer_X;
@@ -925,7 +816,7 @@ var window = {
 			return Interpolate(i1 , i2 , fractional_Y);
 		}
 	
-		function PerlinNoise_2D(x, y)
+		private function PerlinNoise_2D(x, y)
 		{
 				var total = 0;
 				var p = 0.25;
@@ -942,124 +833,119 @@ var window = {
 				return total;
 		}
 	
-		function Interpolate(a, b, x)
+		private function Interpolate(a, b, x)
 		{
-			var ft = x * p.PI;
-			var f = (1 - p.cos(ft)) * .5;
+			var ft = x * PI;
+			var f = (1 - cos(ft)) * .5;
 			return	a*(1-f) + b*f;
 		}
 	
-		p.red = function( aColor )
+		public function red( aColor )
 		{
 			return parseInt(aColor.slice(5));
 		}
 	
-		p.green = function( aColor )
+		public function green( aColor )
 		{
 			return parseInt(aColor.split(",")[1]);
 		}
 	
-		p.blue = function( aColor )
+		public function blue( aColor )
 		{
 			return parseInt(aColor.split(",")[2]);
 		}
 	
-		p.alpha = function( aColor )
+		public function alpha( aColor )
 		{
 			return parseInt(aColor.split(",")[3]);
 		}
 	
-		p.abs = function abs( aNumber )
+		public function abs( aNumber )
 		{
 			return Math.abs( aNumber );
 		}
 		
-		p.cos = function cos( aNumber )
+		public function cos( aNumber )
 		{
 			return Math.cos( aNumber );
 		}
 		
-		p.sin = function sin( aNumber )
+		public function sin( aNumber )
 		{
 			return Math.sin( aNumber );
 		}
 		
-		p.pow = function pow( aNumber, aExponent )
+		public function pow( aNumber, aExponent )
 		{
 			return Math.pow( aNumber, aExponent );
 		}
 		
-		p.constrain = function constrain( aNumber, aMin, aMax )
+		public function constrain( aNumber, aMin, aMax )
 		{
 			return Math.min( Math.max( aNumber, aMin ), aMax );
 		}
 		
-		p.sqrt = function sqrt( aNumber )
-		{
-			return Math.sqrt( aNumber );
-		}
-		
-		p.atan2 = function atan2( aNumber, aNumber2 )
+		public function atan2( aNumber, aNumber2 )
 		{
 			return Math.atan2( aNumber, aNumber2 );
 		}
 		
-		p.radians = function radians( aAngle )
+		public function radians( aAngle )
 		{
-			return ( aAngle / 180 ) * p.PI;
+			return ( aAngle / 180 ) * PI;
 		}
 		
-		p.size = function size( aWidth, aHeight )
+		public function size( aWidth, aHeight )
 		{
 			var fillStyle = curContext.fillStyle;
 			var strokeStyle = curContext.strokeStyle;
 	
-	//[TODO] er
-			curElement.width = aWidth;
-			curElement.height = aHeight;
+	//[TODO] does the Canvas object actually work this way?
+			canvas.width = aWidth;
+			canvas.height = aHeight;
 	
 			curContext.fillStyle = fillStyle;
 			curContext.strokeStyle = strokeStyle;
 		}
 		
-		p.noStroke = function noStroke()
+		public function noStroke()
 		{
 			doStroke = false;
 		}
 		
-		p.noFill = function noFill()
+		public function noFill()
 		{
 			doFill = false;
 		}
 		
-		p.smooth = function smooth()
+		public function smooth()
 		{
 		
 		}
 		
-		p.noLoop = function noLoop()
+		public function noLoop()
 		{
 			doLoop = false;
 		}
 		
-		p.fill = function fill()
+		public function fill( type = null)
 		{
 			doFill = true;
-			curContext.fillStyle = p.color.apply( this, arguments );
+			curContext.fillStyle = color.apply( this, arguments );
 		}
 		
-		p.stroke = function stroke()
+		public function stroke( type = null )
 		{
 			doStroke = true;
-			curContext.strokeStyle = p.color.apply( this, arguments );
+			curContext.strokeStyle = color.apply( this, arguments );
 		}
 	
-		p.strokeWeight = function strokeWeight( w )
+		public function strokeWeight( w )
 		{
 			curContext.lineWidth = w;
 		}
 		
-		p.point = function point( x, y )
+		public function point( x, y )
 		{
 			var oldFill = curContext.fillStyle;
 			curContext.fillStyle = curContext.strokeStyle;
@@ -1067,24 +953,24 @@ var window = {
 			curContext.fillStyle = oldFill;
 		}
 	
-		p.get = function ( x, y )
+		public function get( x, y )
 		{
 			if ( arguments.length == 0 )
 			{
-				var c = p.createGraphics( p.width, p.height );
+				var c = createGraphics( width, height );
 				c.image( curContext, 0, 0 );
 				return c;
 			}
 	
 			if ( !getLoaded )
 			{
-				getLoaded = buildImageObject( curContext.getImageData(0, 0, p.width, p.height) );
+				getLoaded = buildImageObject( curContext.getImageData(0, 0, width, height) );
 			}
 	
 			return getLoaded.get( x, y );
 		}
 	
-		p.set = function ( x, y, color )
+		public function set( x, y, color )
 		{
 			var oldFill = curContext.fillStyle;
 			curContext.fillStyle = color;
@@ -1092,12 +978,12 @@ var window = {
 			curContext.fillStyle = oldFill;
 		}
 		
-		p.arc = function arc( x, y, width, height, start, stop )
+		public function arc( x, y, width, height, start, stop )
 		{
 			if ( width <= 0 )
 				return;
 	
-			if ( curEllipseMode == p.CORNER )
+			if ( curEllipseMode == CORNER )
 			{
 				x += width / 2;
 				y += height / 2;
@@ -1106,7 +992,7 @@ var window = {
 			curContext.beginPath();
 		
 			curContext.moveTo( x, y );
-			curContext.arc( x, y, curEllipseMode == p.CENTER_RADIUS ? width : width/2, start, stop, false );
+			curContext.arc( x, y, curEllipseMode == CENTER_RADIUS ? width : width/2, start, stop, false );
 			
 			if ( doFill )
 				curContext.fill();
@@ -1117,7 +1003,7 @@ var window = {
 			curContext.closePath();
 		}
 		
-		p.line = function line( x1, y1, x2, y2 )
+		public function line( x1, y1, x2, y2 )
 		{
 			curContext.lineCap = "round";
 			curContext.beginPath();
@@ -1130,7 +1016,7 @@ var window = {
 			curContext.closePath();
 		}
 	
-		p.bezier = function bezier( x1, y1, x2, y2, x3, y3, x4, y4 )
+		public function bezier( x1, y1, x2, y2, x3, y3, x4, y4 )
 		{
 			curContext.lineCap = "butt";
 			curContext.beginPath();
@@ -1143,26 +1029,26 @@ var window = {
 			curContext.closePath();
 		}
 	
-		p.triangle = function triangle( x1, y1, x2, y2, x3, y3 )
+		public function triangle( x1, y1, x2, y2, x3, y3 )
 		{
-			p.beginShape();
-			p.vertex( x1, y1 );
-			p.vertex( x2, y2 );
-			p.vertex( x3, y3 );
-			p.endShape();
+			beginShape();
+			vertex( x1, y1 );
+			vertex( x2, y2 );
+			vertex( x3, y3 );
+			endShape();
 		}
 	
-		p.quad = function quad( x1, y1, x2, y2, x3, y3, x4, y4 )
+		public function quad( x1, y1, x2, y2, x3, y3, x4, y4 )
 		{
-			p.beginShape();
-			p.vertex( x1, y1 );
-			p.vertex( x2, y2 );
-			p.vertex( x3, y3 );
-			p.vertex( x4, y4 );
-			p.endShape();
+			beginShape();
+			vertex( x1, y1 );
+			vertex( x2, y2 );
+			vertex( x3, y3 );
+			vertex( x4, y4 );
+			endShape();
 		}
 		
-		p.rect = function rect( x, y, width, height )
+		public function rect( x, y, width, height )
 		{
 			if ( width == 0 && height == 0 )
 				return;
@@ -1172,19 +1058,19 @@ var window = {
 			var offsetStart = 0;
 			var offsetEnd = 0;
 	
-			if ( curRectMode == p.CORNERS )
+			if ( curRectMode == CORNERS )
 			{
 				width -= x;
 				height -= y;
 			}
 			
-			if ( curRectMode == p.RADIUS )
+			if ( curRectMode == RADIUS )
 			{
 				width *= 2;
 				height *= 2;
 			}
 			
-			if ( curRectMode == p.CENTER || curRectMode == p.RADIUS )
+			if ( curRectMode == CENTER || curRectMode == RADIUS )
 			{
 				x -= width / 2;
 				y -= height / 2;
@@ -1206,7 +1092,7 @@ var window = {
 			curContext.closePath();
 		}
 		
-		p.ellipse = function ellipse( x, y, width, height )
+		public function ellipse( x, y, width, height )
 		{
 			x = x || 0;
 			y = y || 0;
@@ -1216,7 +1102,7 @@ var window = {
 	
 			curContext.beginPath();
 			
-			if ( curEllipseMode == p.RADIUS )
+			if ( curEllipseMode == RADIUS )
 			{
 				width *= 2;
 				height *= 2;
@@ -1236,25 +1122,27 @@ var window = {
 			
 			curContext.closePath();
 		}
-	
-		p.link = function( href, target )
+
+		public function link( href:String, target ):void
 		{
-			window.location = href;
+			var request:URLRequest;
+			request = new URLRequest(href);
+			navigateToURL(request);
 		}
 	
-		p.loadPixels = function()
+		public function loadPixels()
 		{
-			p.pixels = buildImageObject( curContext.getImageData(0, 0, p.width, p.height) ).pixels;
+			pixels = buildImageObject( curContext.getImageData(0, 0, width, height) ).pixels;
 		}
 	
-		p.updatePixels = function()
+		public function updatePixels()
 		{
 			var colors = new RegExp('(\d+),(\d+),(\d+),(\d+)');
 			var data = [];
 			var pos = 0;
 	
-			for ( var i = 0, l = p.pixels.length; i < l; i++ ) {
-				var c = (p.pixels[i] || "rgba(0,0,0,1)").match(colors);
+			for ( var i = 0, l = pixels.length; i < l; i++ ) {
+				var c = (pixels[i] || "rgba(0,0,0,1)").match(colors);
 				data[pos] = parseInt(c[1]);
 				data[pos+1] = parseInt(c[2]);
 				data[pos+2] = parseInt(c[3]);
@@ -1262,10 +1150,10 @@ var window = {
 				pos += 4;
 			}
 	
-			curContext.putImageData(new ImageData(p.width, p.height, data), 0, 0);
+			curContext.putImageData(new ImageData(width, height, data), 0, 0);
 		}
 	
-		p.extendClass = function extendClass( obj, args, fn )
+		public function extendClass( obj, args, fn )
 		{
 			if ( arguments.length == 3 )
 			{
@@ -1277,7 +1165,7 @@ var window = {
 			}
 		}
 	
-		p.addMethod = function addMethod( object, name, fn )
+		public function addMethod( object, name, fn )
 		{
 			if ( object[ name ] )
 			{
@@ -1298,9 +1186,9 @@ var window = {
 			}
 		}
 	
-		p.init = function (code){
-			p.stroke( 0 );
-			p.fill( 255 );
+		public function init(code){
+			stroke( 0 );
+			fill( 255 );
 		
 			// Canvas has trouble rendering single pixel stuff on whole-pixel
 			// counts, so we slightly offset it (this is super lame).
@@ -1309,48 +1197,48 @@ var window = {
 			if ( code )
 			{
 				(function(Processing){
-			var pCode = parse(code, p);
-			trace(pCode);
-			ExecutionContext.global.setProperty('Processing', ESObject.wrap(Processing));
-			Evaluator.evaluate('with (Processing) { ' + pCode + '}');
-				})(p);
+					var pCode = parse(code);
+					trace(pCode);
+					ExecutionContext.global.setProperty('Processing', ESObject.wrap(Processing));
+					Evaluator.evaluate('with (Processing) { ' + pCode + '}');
+				})(this);
 			}
 		
-			if ( p.setup )
+			if ( setup )
 			{
 				inSetup = true;
-				p.setup();
+				setup();
 			}
 			
 			inSetup = false;
 			
-			if ( p.draw )
+			if ( draw )
 			{
 				if ( !doLoop )
 				{
-					p.redraw();
+					redraw();
 				}
 				else
 				{
-					p.loop();
+					loop();
 				}
 			}
-			
+/*
 			attach( curElement, "mousemove", function(e)
 			{
-				p.pmouseX = p.mouseX;
-				p.pmouseY = p.mouseY;
-				p.mouseX = e.clientX;
-				p.mouseY = e.clientY;
+				pmouseX = mouseX;
+				pmouseY = mouseY;
+				mouseX = e.clientX;
+				mouseY = e.clientY;
 	
-				if ( p.mouseMoved )
+				if ( mouseMoved )
 				{
-					p.mouseMoved();
+					mouseMoved();
 				}			
 	
-				if ( mousePressed && p.mouseDragged )
+				if ( mousePressed && mouseDragged )
 				{
-					p.mouseDragged();
+					mouseDragged();
 				}			
 			});
 			
@@ -1358,13 +1246,13 @@ var window = {
 			{
 				mousePressed = true;
 	
-				if ( typeof p.mousePressed == "function" )
+				if ( typeof mousePressed == "function" )
 				{
-					p.mousePressed();
+					mousePressed();
 				}
 				else
 				{
-					p.mousePressed = true;
+					mousePressed = true;
 				}
 			});
 				
@@ -1372,14 +1260,14 @@ var window = {
 			{
 				mousePressed = false;
 	
-				if ( typeof p.mousePressed != "function" )
+				if ( typeof mousePressed != "function" )
 				{
-					p.mousePressed = false;
+					mousePressed = false;
 				}
 	
-				if ( p.mouseReleased )
+				if ( mouseReleased )
 				{
-					p.mouseReleased();
+					mouseReleased();
 				}
 			});
 	
@@ -1387,34 +1275,34 @@ var window = {
 			{
 				keyPressed = true;
 	
-				p.key = e.keyCode + 32;
+				var key = e.keyCode + 32;
 	
 				if ( e.shiftKey )
 				{
-					p.key = String.fromCharCode(p.key).toUpperCase().charCodeAt(0);
+					key = String.fromCharCode(key).toUpperCase().charCodeAt(0);
 				}
 	
-				if ( typeof p.keyPressed == "function" )
+				if ( typeof keyPressed == "function" )
 				{
-					p.keyPressed();
+					keyPressed();
 				}
 				else
 				{
-					p.keyPressed = true;
+					keyPressed = true;
 				}
 			});
 	
 			attach(document, "keyup", function(e) {
 				keyPressed = false;
 	
-				if ( typeof p.keyPressed != "function" )
+				if ( typeof keyPressed != "function" )
 				{
-					p.keyPressed = false;
+					keyPressed = false;
 				}
 	
-				if ( p.keyReleased )
+				if ( keyReleased )
 				{
-					p.keyReleased();
+					keyReleased();
 				}
 			});
 			
@@ -1425,9 +1313,8 @@ var window = {
 				else
 					elem.attachEvent( "on" + type, fn );
 			}
-		};
-	
-			}
+*/
+		}
 		
 		private function buildImageObject(obj:ImageData) {
 			var pixels = obj.data;
