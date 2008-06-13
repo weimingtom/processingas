@@ -1,5 +1,6 @@
 package processing {
 	import com.gamemeal.html.Canvas;
+	import com.gamemeal.graphics.ImageData;
 	import mx.controls.Alert;
 	import processing.*;
 	import processing.ProcessingContext;
@@ -8,6 +9,58 @@ package processing {
 	import asas.*;
 
 	dynamic public class ProcessingContext {
+		// init
+		public const PI = Math.PI;
+		public const TWO_PI = Math.PI * 2;
+		public const HALF_PI = Math.PI / 2;
+		public const P3D = 3;
+		public const CORNER = 0;
+		public const CENTER = 1;
+		public const CENTER_RADIUS = 2;
+		public const RADIUS = 2;
+		public const POLYGON = 1;
+		public const TRIANGLES = 6;
+		public const POINTS = 7;
+		public const LINES = 8;
+		public const TRIANGLE_STRIP = 9;
+		public const CORNERS = 10;
+		public const CLOSE = true;
+		public const RGB = 1;
+		public const HSB = 2;
+		
+		// private state variables
+		private var curContext:Canvas;
+		private var doFill:Boolean = true;
+		private var doStroke:Boolean = true;
+		private var loopStarted:Boolean = false;
+		private var hasBackground:Boolean = false;
+		private var doLoop:Boolean = true;
+		private var curRectMode:Number = CORNER;
+		private var curEllipseMode:Number = CENTER;
+		private var inSetup:Boolean = false;
+		private var inDraw:Boolean = false;
+		private var curBackground:String = 'rgba(204,204,204,1)';
+		private var curFrameRate:Number = 1000;
+		private var curShape:Number = POLYGON;
+		private var curShapeCount:Number = 0;
+		private var opacityRange:Number = 255;
+		private var redRange:Number = 255;
+		private var greenRange:Number = 255;
+		private var blueRange:Number = 255;
+		private var pathOpen:Boolean = false;
+		private var mousePressed:Boolean = false;
+		private var keyPressed:Boolean = false;
+		private var firstX:Number;
+		private var firstY:Number;
+		private var prevX:Number;
+		private var prevY:Number;
+		private var curColorMode:Number = RGB;
+		private var curTint:Number = -1;
+		private var curTextSize:Number = 12;
+		private var curTextFont:String = 'Arial';
+		private var getLoaded;
+		private var start:Number;
+	
 		public function ProcessingContext(pObj:Processing):void {
 //******************************************************************************
 
@@ -40,35 +93,9 @@ var window = {
   
   var curElement:Canvas = pObj.canvas;
 
-  // "Private" variables used to maintain state
-  var curContext = curElement.getContext("2d");
-  var doFill = true;
-  var doStroke = true;
-  var loopStarted = false;
-  var hasBackground = false;
-  var doLoop = true;
-  var curRectMode = p.CORNER;
-  var curEllipseMode = p.CENTER;
-  var inSetup = false;
-  var inDraw = false;
-  var curBackground = "rgba(204,204,204,1)";
-  var curFrameRate = 1000;
-  var curShape = p.POLYGON;
-  var curShapeCount = 0;
-  var opacityRange = 255;
-  var redRange = 255;
-  var greenRange = 255;
-  var blueRange = 255;
-  var pathOpen = false;
-  var mousePressed = false;
-  var keyPressed = false;
-  var firstX, firstY, prevX, prevY;
-  var curColorMode = p.RGB;
-  var curTint = -1;
-  var curTextSize = 12;
-  var curTextFont = "Arial";
-  var getLoaded = false;
-  var start = (new Date).getTime();
+	// initialize state variables
+	curContext = curElement.getContext("2d");
+	start = (new Date).getTime();
 
   // Global vars for tracking mouse position
   p.pmouseX = 0;
@@ -213,42 +240,6 @@ var window = {
       return getImage(this.images[0]).height;
     };
   };
-
-  function buildImageObject( obj )
-  {
-    var pixels = obj.data;
-    var data = p.createImage( obj.width, obj.height );
-
-    if ( data.__defineGetter__ && data.__lookupGetter__ && !data.__lookupGetter__("pixels") )
-    {
-      var pixelsDone;
-      data.__defineGetter__("pixels", function()
-      {
-        if ( pixelsDone )
-	  return pixelsDone;
-
-	pixelsDone = [];
-
-        for ( var i = 0; i < pixels.length; i += 4 )
-        {
-          pixelsDone.push( p.color(pixels[i], pixels[i+1], pixels[i+2], pixels[i+3]) );
-        }
-
-	return pixelsDone;
-      });
-    }
-    else
-    {
-      data.pixels = [];
-
-      for ( var i = 0; i < pixels.length; i += 4 )
-      {
-        data.pixels.push( p.color(pixels[i], pixels[i+1], pixels[i+2], pixels[i+3]) );
-      }
-    }
-
-    return data;
-  }
 
   p.createImage = function createImage( w, h, mode )
   {
@@ -401,11 +392,11 @@ var window = {
       name: name,
       width: function( str )
       {
-        if ( curContext.mozMeasureText )
+/*        if ( curContext.mozMeasureText )
           return curContext.mozMeasureText( typeof str == "number" ?
             String.fromCharCode( str ) :
             str) / curTextSize;
-	else
+	else*/
 	  return 0;
       }
     };
@@ -432,7 +423,7 @@ var window = {
 
   p.text = function text( str, x, y )
   {
-    if ( str && curContext.mozDrawText )
+/*    if ( str && curContext.mozDrawText )
     {
       curContext.save();
       curContext.mozTextStyle = curTextSize + "px " + curTextFont.name;
@@ -441,7 +432,7 @@ var window = {
         String.fromCharCode( str ) :
 	str );
       curContext.restore();
-    }
+    }*/
   }
 
   p.char = function char( key )
@@ -1267,11 +1258,7 @@ var window = {
   p.updatePixels = function()
   {
     var colors = new RegExp('(\d+),(\d+),(\d+),(\d+)');
-    var pixels = {};
-    var data = pixels.data = [];
-    pixels.width = p.width;
-    pixels.height = p.height;
-
+    var data = [];
     var pos = 0;
 
     for ( var i = 0, l = p.pixels.length; i < l; i++ ) {
@@ -1283,7 +1270,7 @@ var window = {
       pos += 4;
     }
 
-    curContext.putImageData(pixels, 0, 0);
+    curContext.putImageData(new ImageData(p.width, p.height, data), 0, 0);
   }
 
   p.extendClass = function extendClass( obj, args, fn )
@@ -1450,23 +1437,30 @@ var window = {
 
 		}
 		
-		// init
-		public const PI = Math.PI;
-		public const TWO_PI = Math.PI * 2;
-		public const HALF_PI = Math.PI / 2;
-		public const P3D = 3;
-		public const CORNER = 0;
-		public const CENTER = 1;
-		public const CENTER_RADIUS = 2;
-		public const RADIUS = 2;
-		public const POLYGON = 1;
-		public const TRIANGLES = 6;
-		public const POINTS = 7;
-		public const LINES = 8;
-		public const TRIANGLE_STRIP = 9;
-		public const CORNERS = 10;
-		public const CLOSE = true;
-		public const RGB = 1;
-		public const HSB = 2;
+		private function buildImageObject(obj:ImageData) {
+			var pixels = obj.data;
+			var data = this.createImage( obj.width, obj.height );
+			
+			if ( data.__defineGetter__ && data.__lookupGetter__ && !data.__lookupGetter__("pixels") ) {
+				var pixelsDone;
+				data.__defineGetter__("pixels", function () {
+					if ( pixelsDone )
+						return pixelsDone;
+					pixelsDone = [];
+			
+					for ( var i = 0; i < pixels.length; i += 4 )
+						pixelsDone.push(this.color(pixels[i], pixels[i+1], pixels[i+2], pixels[i+3]) );
+			
+					return pixelsDone;	
+				});
+			} else {
+				data.pixels = [];
+			
+				for ( var i = 0; i < pixels.length; i += 4 )
+					data.pixels.push(this.color(pixels[i], pixels[i+1], pixels[i+2], pixels[i+3]) );
+			}
+
+			return data;
+		}
 	}
 }
