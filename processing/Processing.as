@@ -1,22 +1,31 @@
-﻿/*
- * Processing.js - John Resig (http://ejohn.org/)
- * MIT Licensed
- * http://ejohn.org/blog/processingjs/
- *
- * This is a port of the Processing Visualization Language.
- * More information: http://processing.org/
- */
-
-package processing {
-
+﻿package processing {
 	import com.gamemeal.html.Canvas;
-	import mx.controls.Alert;
 	import processing.*;
+	import asas.*;
 
-	public function Processing( aElement, aCode )
-	{
-	  var p = buildProcessing( aElement );
-	  p.init( aCode );
-	  return p;
+	public class Processing {
+		private var _canvas:Canvas;
+		public function get canvas():Canvas {
+			return _canvas;
+		}
+		
+		private var _context:ProcessingContext;
+		public function get context():ProcessingContext {
+			return _context;
+		}
+
+		public function Processing():void {
+			// create canvas object
+//[TODO] not hard-code that?
+			_canvas = new Canvas('processingCanvas', 200, 200);
+			
+			// create processing context
+			_context = new ProcessingContext(this);
+		}
+		
+		public function run(code):void {
+			// run the specified code
+			_context.init(code);
+		}
 	}
 }

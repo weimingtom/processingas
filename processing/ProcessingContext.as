@@ -2,11 +2,13 @@ package processing {
 	import com.gamemeal.html.Canvas;
 	import mx.controls.Alert;
 	import processing.*;
+	import processing.ProcessingContext;
 	import flash.utils.setInterval;
 	import flash.utils.clearInterval;
 	import asas.*;
 
-function buildProcessing( curElement ){
+	dynamic public class ProcessingContext {
+		public function ProcessingContext(pObj:Processing):void {
 //******************************************************************************
 
 var document = {
@@ -34,26 +36,9 @@ var window = {
 //******************************************************************************
 
 
-  var p = {};
-
-  // init
-  p.PI = Math.PI;
-  p.TWO_PI = 2 * p.PI;
-  p.HALF_PI = p.PI / 2;
-  p.P3D = 3;
-  p.CORNER = 0;
-  p.CENTER = 1;
-  p.CENTER_RADIUS = 2;
-  p.RADIUS = 2;
-  p.POLYGON = 1;
-  p.TRIANGLES = 6;
-  p.POINTS = 7;
-  p.LINES = 8;
-  p.TRIANGLE_STRIP = 9;
-  p.CORNERS = 10;
-  p.CLOSE = true;
-  p.RGB = 1;
-  p.HSB = 2;
+  var p:ProcessingContext = this;
+  
+  var curElement:Canvas = pObj.canvas;
 
   // "Private" variables used to maintain state
   var curContext = curElement.getContext("2d");
@@ -293,10 +278,10 @@ var window = {
 
   p.createGraphics = function createGraphics( w, h )
   {
-    var canvas = document.createElement("canvas");
-    var ret = buildProcessing( canvas );
+    var pObj = new Processing();
+    var ret = pObj.context;
     ret.size( w, h );
-    ret.canvas = canvas;
+    ret.canvas = pObj.canvas;
     return ret;
   }
 
@@ -829,6 +814,7 @@ var window = {
   
   p.frameRate = function frameRate( aRate )
   {
+//[TODO] set stage one
     curFrameRate = aRate;
   }
   
@@ -1375,8 +1361,8 @@ var window = {
     {
       p.pmouseX = p.mouseX;
       p.pmouseY = p.mouseY;
-      p.mouseX = e.clientX - curElement.offsetLeft;
-      p.mouseY = e.clientY - curElement.offsetTop;
+      p.mouseX = e.clientX;
+      p.mouseY = e.clientY;
 
       if ( p.mouseMoved )
       {
@@ -1462,7 +1448,25 @@ var window = {
     }
   };
 
-  return p;
-}
-
+		}
+		
+		// init
+		public const PI = Math.PI;
+		public const TWO_PI = Math.PI * 2;
+		public const HALF_PI = Math.PI / 2;
+		public const P3D = 3;
+		public const CORNER = 0;
+		public const CENTER = 1;
+		public const CENTER_RADIUS = 2;
+		public const RADIUS = 2;
+		public const POLYGON = 1;
+		public const TRIANGLES = 6;
+		public const POINTS = 7;
+		public const LINES = 8;
+		public const TRIANGLE_STRIP = 9;
+		public const CORNERS = 10;
+		public const CLOSE = true;
+		public const RGB = 1;
+		public const HSB = 2;
+	}
 }
