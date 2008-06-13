@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="init()"
+ width="450" height="450">
+    <mx:Script><![CDATA[
+
+import com.gamemeal.html.Canvas;
+import mx.core.ByteArrayAsset;
+import flash.utils.ByteArray;
+import mx.controls.Alert;
+import processing.Processing;
+
+[Bindable]
+[Embed(source="test.processing", mimeType="application/octet-stream")]
+private var ProcessingText:Class;
+
+public function init():void {
+        // load processing.js
+        var processingTextAsset:ByteArrayAsset = ByteArrayAsset(new ProcessingText());
+        var processingText:String = processingTextAsset.readUTFBytes(processingTextAsset.length);
+
+        // create canvas
+        var canvas:Canvas = new Canvas('mainCanvas', 200, 200);
+        var ctx:Canvas = canvas.getContext("2d");
+        ctx.fillStyle = "red";
+        
+        ctx.beginPath();
+        ctx.moveTo(30, 30);
+        ctx.lineTo(150, 150);
+        // was: ctx.quadraticCurveTo(60, 70, 70, 150); which is wrong.
+        ctx.bezierCurveTo(60, 70, 60, 70, 70, 150); // <- this is right formula for the image on the right ->
+        ctx.lineTo(30, 30);
+        ctx.fill();
+        addChild(canvas);
+        
+        
+        // load script
+//        Alert.show(processingText);
+//        Processing(canvas, processingText);
+
+//        Evaluator.evaluate(processingText);
+}
+
+    ]]></mx:Script>
+    
+    <mx:TextArea id="output" width="320" height="320" />
+</mx:Application>
