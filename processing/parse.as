@@ -4,7 +4,7 @@ package processing {
 	import mx.controls.Alert;
 	import processing.*;
 
-	function parse( aCode, p )
+	function parse( aCode )
 	{
 	  // Angels weep at this parsing code :-(
 	
