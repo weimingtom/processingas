@@ -17,7 +17,8 @@ package processing {
 	import flash.geom.Rectangle;
 	import flash.geom.Matrix;
 
-	public class Context {
+//[TODO] not dynamic!
+	dynamic public class Context {
 		// processing object
 		private var p:Processing;
 	
@@ -248,12 +249,12 @@ package processing {
 			return data;
 		}
 		
-		public function createGraphics( w, h ):Context
+		public function createGraphics( w, h )
 		{
-			var pObj:Processing = new Processing();
+/*			var pObj:Processing = new Processing();
 			var ret:Context = pObj.context;
 			ret.size( w, h );
-			return ret;
+			return ret;*/
 		}
 		
 		public function beginDraw()
@@ -275,7 +276,7 @@ package processing {
 		//[TODO] this should be private; see AniSprite
 		//[TODO] also, this function needs much work
 		private function getImage( img ) {
-			if ( typeof img == "string" )
+/*			if ( typeof img == "string" )
 			{
 				//[TODO] load image from path
 			}
@@ -300,12 +301,12 @@ package processing {
 			
 			img.canvas = canvas;
 			
-			return canvas;
+			return canvas;*/
 		}
 			
 		public function image( img, x, y, w = null, h = null )
 		{
-			x = x || 0;
+/*			x = x || 0;
 			y = y || 0;
 	
 			var obj = getImage(img);
@@ -336,7 +337,7 @@ package processing {
 				curContext.globalCompositeOperation = "darker";
 				image( img._mask, x, y );
 				curContext.globalCompositeOperation = oldComposite;
-			}
+			}*/
 		}
 	
 		public function exit()
@@ -450,7 +451,7 @@ package processing {
 				opacityRange = range4 ? range4 : opacityRange;
 			}
 		}
-		
+
 		public function beginShape( type = POLYGON )
 		{
 			curShape = type;
@@ -714,17 +715,14 @@ package processing {
 			curStrokeColor = color.apply( this, args );
 		}
 	
-		public function strokeWeight( w:Number )
+		public function strokeWeight( w:Number ):void
 		{
 			curStrokeWeight = w;
 		}
 		
-		public function point( x, y )
+		public function point( x:Number, y:Number ):void
 		{
-			var oldFill = curContext.fillStyle;
-			curContext.fillStyle = curContext.strokeStyle;
-			curContext.fillRect( Math.round( x ), Math.round( y ), 1, 1 );
-			curContext.fillStyle = oldFill;
+			p.sprite.bitmapData.setPixel32(x, y, curStrokeColor);
 		}
 	
 		public function get( x, y )

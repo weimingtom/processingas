@@ -2,7 +2,7 @@ package {
 	import flash.display.Sprite;
 	import processing.Processing;
 	import processing.Context;
-	import processing.Parser;
+	import processing.parser.*;
 	import mx.core.ByteArrayAsset;
 	import flash.utils.ByteArray;
 	
@@ -26,66 +26,39 @@ package {
 			// evaluate code
 //			var parser:Parser = new Parser();
 //			parser.evaluate(processingText, p);
+			var evaluator:Evaluator = new Evaluator(p.context);
+//			evaluator.evaluate();
 
 //*****************************************************************************
 // All Examples Written by Casey Reas and Ben Fry
 // unless otherwise stated.
-var e1, e2, e3, e4, e5;
+evaluator.evaluate(new Block(
+	new Statement('callMethod', ['size', [200, 200]]),
+	new Statement('callMethod', ['smooth']),
+	new Statement('callMethod', ['background', [0]]),
+	new Statement('callMethod', ['strokeWeight', [10]]),
 
-c.setup = function () 
-{
-  c.size(200, 200);
-  c.smooth();
-  c.noStroke();
-  e1 = new Eye( 50,  16,  80);
-  e2 = new Eye( 64,  85,  40);  
-  e3 = new Eye( 90, 200, 120);
-  e4 = new Eye(150,  44,  40); 
-  e5 = new Eye(175, 120,  80);
-}
+	new Statement('defineVar', [evaluator.INT, 'i', 0]),
+	new Statement('loop', [
+		new Statement('expression', [new Statement('getValue', ['i']), new Statement('getValue', ['width']), evaluator.LT]),
+		new Block(
+			new Statement('defineVar', [evaluator.FLOAT, 'r', new Statement('callMethod', ['random', [255]])]),
+			new Statement('defineVar', [evaluator.FLOAT, 'x', new Statement('callMethod', ['random', [0, new Statement('getValue', ['width'])]])]),
+			new Statement('callMethod', ['stroke', [new Statement('getValue', ['r']), 100]]),
+			new Statement('callMethod', ['line', [new Statement('getValue', ['i']), 0, new Statement('getValue', ['x']), new Statement('getValue', ['height'])]]),
+			new Statement('setValue', ['i', new Statement('expression', [new Statement('getValue', ['i']), 1, evaluator.ADD])])
+		)
+	])
+));
 
-c.draw = function () 
-{
-  c.background(102);
- 
-  e1.update(c.mouseX, c.mouseY);
-  e2.update(c.mouseX, c.mouseY);
-  e3.update(c.mouseX, c.mouseY);
-  e4.update(c.mouseX, c.mouseY);
-  e5.update(c.mouseX, c.mouseY);
-
-  e1.display();
-  e2.display();
-  e3.display();
-  e4.display();
-  e5.display();
-}
-
-function Eye(x, y, s)
-{
-  var ex, ey;
-  var size;
-  var angle = 0.0;
-  
-    ex = x;
-    ey = y;
-    size = s;
-
-  this.update = function (mx, my) {
-    angle = c.atan2(my-ey, mx-ex);
-  }
-  
-  this.display = function () {
-    c.pushMatrix();
-    c.translate(ex, ey);
-    c.fill(255);
-    c.ellipse(0, 0, size, size);
-    c.rotate(angle);
-    c.fill(153);
-    c.ellipse(size/4, 0, size/2, size/2);
-    c.popMatrix();
-  }
-}
+//c.i = 0;
+//while (c.i < c.width) {
+//  c.r = c.random(255);
+//  c.x = c.random(0, c.width);
+//  c.stroke(c.r, 100);
+//  c.line(c.i, 0, c.x, c.height);
+//  c.i++;
+//}
 //*****************************************************************************
 			
 			// start processing

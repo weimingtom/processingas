@@ -1,6 +1,22 @@
 //*****************************************************************************
 // All Examples Written by Casey Reas and Ben Fry
 // unless otherwise stated.
+c.size(200, 200);
+c.smooth();
+c.background(0);
+c.strokeWeight(10);
+
+for(var i = 0; i < c.width; i++) {
+  var r = c.random(255);
+  var x = c.random(0, c.width);
+  c.stroke(r, 100);
+  c.line(i, 0, x, c.height);
+}
+//*****************************************************************************
+
+//*****************************************************************************
+// All Examples Written by Casey Reas and Ben Fry
+// unless otherwise stated.
 c.setup = function () 
 {
   c.size(200, 200); 
