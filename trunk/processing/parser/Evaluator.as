@@ -28,8 +28,15 @@ package processing.parser {
 			return context[func].apply(context, parsedArgs);
 		}
 
-		public function defineVar(type:Object, name:String) {
+		public function defineVar(name:String, type:Object) {
 			context[name] = undefined;
+		}
+
+		public function defineFunction(name:String, block:Block) {
+			var evaluator:Evaluator = this;
+			context[name] = function () {
+				return block.execute(evaluator);
+			}
 		}
 
 		public function loop(cond:Statement, block:Block) {
