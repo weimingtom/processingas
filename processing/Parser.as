@@ -12,7 +12,7 @@
 			trace(pCode);
 			
 			// evaluate it
-			ExecutionContext.global.setProperty('Processing', ESObject.wrap(p));
+			ExecutionContext.global.setProperty('Processing', ESObject.wrap(p.context));
 			Evaluator.evaluate('with (Processing) { ' + pCode + '}');
 		}
 		
@@ -231,18 +231,7 @@
 			aCode = aCode.replace(/('[a-zA-Z0-9]')/g, "$1.charCodeAt(0)");
 		
 			// Convert #aaaaaa into color
-			aCode = aCode.replace(/#([a-f0-9]{6})/ig, function(m, hex){
-				var num = toNumbers(hex);
-				return "color(" + num[0] + "," + num[1] + "," + num[2] + ")";
-			});
-		
-			function toNumbers( str ){
-				var ret = [];
-				 str.replace(/(..)/g, function(str){
-					ret.push( parseInt( str, 16 ) );
-				});
-				return ret;
-			}
+			aCode = aCode.replace(/#([a-f0-9]{6})/ig, '0x$1');
 		
 			return aCode;
 		}

@@ -1,11 +1,11 @@
 package processing {
-	import processing.ProcessingContext;
+	import processing.Context;
 
 	public class AniSprite {
 		public var images:Array = [];
 		public var pos:Number = 0;
 		
-		private var context:ProcessingContext;
+		private var context:Context;
 		
 		private function nf( num, pad )
 		{
