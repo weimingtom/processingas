@@ -10,20 +10,22 @@ package processing {
 	import flash.utils.clearInterval;
 	import flash.net.navigateToURL;
 	import flash.net.URLRequest;
-	import asas.*;
+	import flash.display.Bitmap;
+	import flash.display.BitmapData;
+	import flash.display.Shape;
+	import flash.display.CapsStyle;
+	import flash.geom.Rectangle;
 
-	dynamic public class ProcessingContext {
+	public class Context {
 		// processing object
-		private var pObj:Processing;
-		
+		private var p:Processing;
 		// public reference
-		public function get processing() { return pObj; }
-		public function get canvas() { return pObj.canvas; }
+//[TODO] these shouldn't be public in context...
+		public function get processing():Processing { return p; }
+		public function get canvas():Bitmap { return p.canvas; }
 	
 		// init
-		public const PI = Math.PI;
-		public const TWO_PI = Math.PI * 2;
-		public const HALF_PI = Math.PI / 2;
+
 		public const P3D = 3;
 		public const CORNER = 0;
 		public const CENTER = 1;
@@ -38,20 +40,17 @@ package processing {
 		public const CLOSE = true;
 		public const RGB = 1;
 		public const HSB = 2;
-		
-		// private state variables
+
+//[TODO] coughgetridofthiscough		
 		private var curContext:Canvas;
-		private var doFill:Boolean = true;
-		private var doStroke:Boolean = true;
+
+		// private state variables
 		private var loopStarted:Boolean = false;
 		private var hasBackground:Boolean = false;
-		private var doLoop:Boolean = true;
 		private var curRectMode:Number = CORNER;
 		private var curEllipseMode:Number = CENTER;
-		private var inSetup:Boolean = false;
-		private var inDraw:Boolean = false;
-		private var curBackground:String = 'rgba(204,204,204,1)';
-		private var curFrameRate:Number = 1000;
+		private var curBackground:* = 0xFFCCCCCC;
+		private var curFrameRate:Number = 60;
 		private var curShape:Number = POLYGON;
 		private var curShapeCount:Number = 0;
 		private var opacityRange:Number = 255;
@@ -71,10 +70,8 @@ package processing {
 		private var curTextFont:String = 'Arial';
 		private var getLoaded;
 		private var start:Number;
-		private var pixels:Array = [];
 		
 		// mouse position vars
-//[TODO] read-only these?
 		public var pmouseX:Number = 0;
 		public var pmouseY:Number = 0;
 		public var mouseX:Number = 0;
@@ -91,104 +88,111 @@ package processing {
 		public var setup:Function = undefined;
 		
 		// canvas width/height
-		public function get width():Number { return pObj.canvas.width; }
-		public function get height():Number { return pObj.canvas.height; }
+		public function get width():Number { return p.canvas.bitmapData.width; }
+		public function get height():Number { return p.canvas.bitmapData.height; }
+
+		// pixels array
+		public var pixels:Array;
 		
 		// constructor
-		public function ProcessingContext(_pObj:Processing):void {
+		public function Context(_p:Processing):void {
 			// save processing object
-			pObj = _pObj;
+			p = _p;
+
+			var fakeCanvas = new Canvas('sfasfad', 200, 200);
+			curContext = fakeCanvas.getContext('2d');
 		
 			// initialize state variables
-			curContext = pObj.canvas.getContext('2d');
-			start = (new Date).getTime();
+			start = (new Date).getTime();		
+		}
 
-/*
-//******************************************************************************
+		// stroke
+		private var doStroke:Boolean = true;
+		private var curStrokeWeight:Number = 1;
+		private var curStrokeColor:Number = 0xFF000000;
+		private var curStrokeCap:String = CapsStyle.ROUND;
 
-var document = {
-	createElement: function (name) {
-		if (name == 'canvas')
-			return new Canvas('canvas' + Math.random(), 1000, 1000);
-	},
-	getElementById: function (id) {
-		//[TODO] uh
-	},
-	addEventListener: function (name, func, bubble) {
-		//[TODO] uh
-	}
-};
+		// fill
+		private var doFill:Boolean = true;
+		private var curFillColor:Number = 0xFF000000;
 
-var window = {
-	location: '' //[TODO] uh
-};
+		// shape drawing
+		private var shape:Shape = new Shape();
+		private var doSmooth:Boolean = false;
 
-// changes: fixed RegExp.leftContext, .rightContext
-// wrapped some regex's (that Flash no like for some reason)
-// fixed log() function
-// removed redundant labels from set, get, init, and color functions (compiler errors)
+		private function beginShapeDrawing():void {
+			// set stroke
+			if (doStroke)
+				shape.graphics.lineStyle(curStrokeWeight, curStrokeColor,
+				    alpha(curStrokeColor) / opacityRange, true, 'normal',
+				    curStrokeCap, curStrokeCap);
+			else
+				shape.graphics.lineStyle();
 
-//******************************************************************************
+			// set fill
+			if (doFill)
+				shape.graphics.beginFill(curFillColor, alpha(curFillColor) / opacityRange);
+		}
 
+		private function endShapeDrawing():void {
+			// end any open fill
+			shape.graphics.endFill();
 
-	var p:ProcessingContext = this;
-	
-	var curElement:Canvas = pObj.canvas; */
+			// rasterize and clear shape
+			p.canvas.bitmapData.draw(shape, null, null, null, null, doSmooth);
+			shape.graphics.clear();
 		}
 		
 		// color conversion
-		public function color(... args):String {
-			// in case of HSV conversion:
-			// http://srufaculty.sru.edu/david.dailey/javascript/js/5rml.js
-			
-			var aColor = '';
-			
+//[TODO] should be a color datatype
+//[TODO] also i'm not sure if this function is entirely correct
+		public function color(... args):Number {
+			var aColor:Number = 0;
+
 			// function overrides
-			if (args.length == 3)
+			if (args.length == 1 && args[0] < 256)
 			{
-				aColor = color(args[0], args[1], args[2], opacityRange );
+				// color(gray)
+				return color( args[0], args[0], args[0], opacityRange );
+			}
+			else if (args.length == 2 && args[0] < 256)
+			{
+				// color(gray, alpha)
+				return color( args[0], args[0], args[0], args[1] );
+			}
+			else if (args.length == 3)
+			{
+				// color(value1, value2, value3)
+				return color(args[0], args[1], args[2], opacityRange );
 			}
 			else if (args.length == 4)
 			{
-				var a = args[3] / opacityRange;
-				a = isNaN(a) ? 1 : a;
-			
-				if (curColorMode == HSB) {
-					var rgb = HSBtoRGB(args[0], args[1], args[2]);
-					var r = rgb[0], g = rgb[1], b = rgb[2];
-				} else {
-					var r = getColor(args[0], redRange);
-					var g = getColor(args[1], greenRange);
-					var b = getColor(args[2], blueRange);
-				}
-			
-				aColor = "rgba(" + r + "," + g + "," + b + "," + a + ")";
+				// color(value1, value2, value3, alpha)
+				var a = getColor(args[3], opacityRange);
+	
+				// normalize color values
+				var colors = (curColorMode == HSB) ?
+				    HSBtoRGB(args[0], args[1], args[2]) : args;
+				// fit colors into range
+				var r = getColor(colors[0], redRange);
+				var g = getColor(colors[1], greenRange);
+				var b = getColor(colors[2], blueRange);
+
+				return (a << 24) + (r << 16) + (g << 8) + b;
 			}
-			else if ( typeof args[0] == "string" )
+			else if ( args.length == 1 && args[0] > 256 )
 			{
-				aColor = args[0];
-			
-				if (args.length == 2)
-				{
-					var c = aColor.split(",");
-					c[3] = (args[1] / opacityRange) + ")";
-					aColor = c.join(",");
-				}
+				// color(hex)
+				return color(args[0] >> 16 & 0xFF, args[0] >> 8 & 0xFF, args[0] & 0xFF, args[0] >> 24 & 0xFF);
 			}
-			else if (args.length == 2)
+			else if ( args.length == 2 && args[0] > 256 )
 			{
-				aColor = color( args[0], args[0], args[0], args[1] );
-			}
-			else if (typeof args[0] == "number")
-			{
-				aColor = color( args[0], args[0], args[0], opacityRange );
-			}
-			else
-			{
-				aColor = color( redRange, greenRange, blueRange, opacityRange );
+				// color(hex, alpha)
+				return color(args[0] >> 16 & 0xFF, args[0] >> 8 & 0xFF, args[0] & 0xFF, args[1]);
 			}
 			
-			return aColor;
+			// catch-all
+			return color( redRange, greenRange, blueRange, opacityRange );
 		}
 		
 		// HSB conversion function from Mootools, MIT Licensed
@@ -248,10 +252,10 @@ var window = {
 			return data;
 		}
 		
-		public function createGraphics( w, h ):ProcessingContext
+		public function createGraphics( w, h ):Context
 		{
 			var pObj:Processing = new Processing();
-			var ret:ProcessingContext = pObj.context;
+			var ret:Context = pObj.context;
 			ret.size( w, h );
 			return ret;
 		}
@@ -433,31 +437,21 @@ var window = {
 		{
 	
 		}
-	
-		public function map( value, istart, istop, ostart, ostop )
-		{
-			return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
-		}
 		
-		public function colorMode( mode, range1, range2, range3, range4 )
+		public function colorMode( mode:Number, range1:Number = undefined, range2:Number = undefined, range3:Number = undefined, range4:Number = undefined ):void
 		{
 			curColorMode = mode;
-	
-			if ( arguments.length >= 4 )
-			{
-				redRange = range1;
-				greenRange = range2;
-				blueRange = range3;
-			}
-	
-			if ( arguments.length == 5 )
-			{
-				opacityRange = range4;
-			}
-	
+
 			if ( arguments.length == 2 )
 			{
 				colorMode( mode, range1, range1, range1, range1 );
+			}
+			else if ( arguments.length >= 3 )
+			{
+				redRange = range1 ? range1 : redRange;
+				greenRange = range2 ? range2 : redRange;
+				blueRange = range3 ? range3 : redRange;
+				opacityRange = range4 ? range4 : opacityRange;
 			}
 		}
 		
@@ -580,46 +574,6 @@ var window = {
 			curEllipseMode = aEllipseMode;
 		}
 		
-		public function dist( x1, y1, x2, y2 )
-		{
-			return Math.sqrt( Math.pow( x2 - x1, 2 ) + Math.pow( y2 - y1, 2 ) );
-		}
-	
-		public function year()
-		{
-			return (new Date).getYear() + 1900;
-		}
-	
-		public function month()
-		{
-			return (new Date).getMonth();
-		}
-	
-		public function day()
-		{
-			return (new Date).getDay();
-		}
-	
-		public function hour()
-		{
-			return (new Date).getHours();
-		}
-	
-		public function minute()
-		{
-			return (new Date).getMinutes();
-		}
-	
-		public function second()
-		{
-			return (new Date).getSeconds();
-		}
-	
-		public function millis()
-		{
-			return (new Date).getTime() - start;
-		}
-		
 		public function ortho()
 		{
 		
@@ -642,26 +596,29 @@ var window = {
 		
 		public function pushMatrix()
 		{
-			curContext.save();
+			//[TODO] saveContext
 		}
 		
 		public function popMatrix()
 		{
-			curContext.restore();
+			//[TODO] restoreContext
 		}
 		
 		public function redraw()
 		{
+//[TODO] this function isn't exactly... correct
 			if ( hasBackground )
 			{
 				background();
 			}
 			
-			inDraw = true;
+			p.inDraw = true;
 			pushMatrix();
+			p.canvas.bitmapData.lock();
 			draw();
+			p.canvas.bitmapData.unlock();
 			popMatrix();
-			inDraw = false;
+			p.inDraw = false;
 		}
 		
 		public function loop()
@@ -683,12 +640,6 @@ var window = {
 			}, 1000 / curFrameRate );
 			
 			loopStarted = true;
-		}
-		
-		public function frameRate( aRate )
-		{
-	//[TODO] set stage frame rate
-			curFrameRate = aRate;
 		}
 		
 		public function background( img = null )
@@ -713,199 +664,28 @@ var window = {
 			}
 			else
 			{
-				var oldFill = curContext.fillStyle;
-				curContext.fillStyle = curBackground + "";
-				curContext.fillRect( 0, 0, width, height );
-				curContext.fillStyle = oldFill;
+				p.canvas.bitmapData.fillRect(new Rectangle(0, 0, width, height), curBackground);
 			}
 		}
 	
-		public function sq( aNumber )
+		public function red( aColor:Number ):Number
 		{
-			return aNumber * aNumber;
+			return aColor >> 16 & 0xFF;
 		}
 	
-		public function sqrt( aNumber )
+		public function green( aColor:Number ):Number
 		{
-			return Math.sqrt( aNumber );
-		}
-		
-		public function int( aNumber )
-		{
-			return Math.floor( aNumber );
+			return aColor >> 8 & 0xFF;
 		}
 	
-		public function min( aNumber, aNumber2 )
+		public function blue( aColor:Number ):Number
 		{
-			return Math.min( aNumber, aNumber2 );
+			return aColor & 0xFF;
 		}
 	
-		public function max( aNumber, aNumber2 )
+		public function alpha( aColor:Number ):Number
 		{
-			return Math.max( aNumber, aNumber2 );
-		}
-	
-		public function ceil( aNumber )
-		{
-			return Math.ceil( aNumber );
-		}
-	
-		public function floor( aNumber )
-		{
-			return Math.floor( aNumber );
-		}
-	
-		public function float( aNumber )
-		{
-			return typeof aNumber == "string" ?
-		float( aNumber.charCodeAt(0) ) :
-					parseFloat( aNumber );
-		}
-	
-		public function byte( aNumber )
-		{
-			return aNumber || 0;
-		}
-		
-		public function random( aMin, aMax )
-		{
-			return arguments.length == 2 ?
-				aMin + (Math.random() * (aMax - aMin)) :
-				Math.random() * aMin;
-		}
-	
-		// From: http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
-		public function noise( x, y, z )
-		{
-			return arguments.length >= 2 ?
-				PerlinNoise_2D( x, y ) :
-				PerlinNoise_2D( x, x );
-		}
-	
-		private function Noise(x, y)
-		{
-			var n = x + y * 57;
-			n = (n<<13) ^ n;
-			return Math.abs(1.0 - (((n * ((n * n * 15731) + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0));
-		}
-	
-		private function SmoothedNoise(x, y)
-		{
-			var corners = ( Noise(x-1, y-1)+Noise(x+1, y-1)+Noise(x-1, y+1)+Noise(x+1, y+1) ) / 16;
-			var sides	 = ( Noise(x-1, y)	+Noise(x+1, y)	+Noise(x, y-1)	+Noise(x, y+1) ) /	8;
-			var center	=	Noise(x, y) / 4;
-			return corners + sides + center;
-		}
-	
-		private function InterpolatedNoise(x, y)
-		{
-			var integer_X		= Math.floor(x);
-			var fractional_X = x - integer_X;
-	
-			var integer_Y		= Math.floor(y);
-			var fractional_Y = y - integer_Y;
-	
-			var v1 = SmoothedNoise(integer_X,		 integer_Y);
-			var v2 = SmoothedNoise(integer_X + 1, integer_Y);
-			var v3 = SmoothedNoise(integer_X,		 integer_Y + 1);
-			var v4 = SmoothedNoise(integer_X + 1, integer_Y + 1);
-	
-			var i1 = Interpolate(v1 , v2 , fractional_X);
-			var i2 = Interpolate(v3 , v4 , fractional_X);
-	
-			return Interpolate(i1 , i2 , fractional_Y);
-		}
-	
-		private function PerlinNoise_2D(x, y)
-		{
-				var total = 0;
-				var p = 0.25;
-				var n = 3;
-	
-				for ( var i = 0; i <= n; i++ )
-				{
-						var frequency = Math.pow(2, i);
-						var amplitude = Math.pow(p, i);
-	
-						total = total + InterpolatedNoise(x * frequency, y * frequency) * amplitude;
-				}
-	
-				return total;
-		}
-	
-		private function Interpolate(a, b, x)
-		{
-			var ft = x * PI;
-			var f = (1 - cos(ft)) * .5;
-			return	a*(1-f) + b*f;
-		}
-	
-		public function red( aColor )
-		{
-			return parseInt(aColor.slice(5));
-		}
-	
-		public function green( aColor )
-		{
-			return parseInt(aColor.split(",")[1]);
-		}
-	
-		public function blue( aColor )
-		{
-			return parseInt(aColor.split(",")[2]);
-		}
-	
-		public function alpha( aColor )
-		{
-			return parseInt(aColor.split(",")[3]);
-		}
-	
-		public function abs( aNumber )
-		{
-			return Math.abs( aNumber );
-		}
-		
-		public function cos( aNumber )
-		{
-			return Math.cos( aNumber );
-		}
-		
-		public function sin( aNumber )
-		{
-			return Math.sin( aNumber );
-		}
-		
-		public function pow( aNumber, aExponent )
-		{
-			return Math.pow( aNumber, aExponent );
-		}
-		
-		public function constrain( aNumber, aMin, aMax )
-		{
-			return Math.min( Math.max( aNumber, aMin ), aMax );
-		}
-		
-		public function atan2( aNumber, aNumber2 )
-		{
-			return Math.atan2( aNumber, aNumber2 );
-		}
-		
-		public function radians( aAngle )
-		{
-			return ( aAngle / 180 ) * PI;
-		}
-		
-		public function size( aWidth, aHeight )
-		{
-			var fillStyle = curContext.fillStyle;
-			var strokeStyle = curContext.strokeStyle;
-	
-	//[TODO] does the Canvas object actually work this way?
-			canvas.width = aWidth;
-			canvas.height = aHeight;
-	
-			curContext.fillStyle = fillStyle;
-			curContext.strokeStyle = strokeStyle;
+			return aColor >> 24 & 0xFF;
 		}
 		
 		public function noStroke()
@@ -918,31 +698,36 @@ var window = {
 			doFill = false;
 		}
 		
-		public function smooth()
+		public function smooth():void
 		{
-		
+			doSmooth = true;
+		}
+
+		public function noSmooth():void
+		{
+			doSmooth = false;
 		}
 		
 		public function noLoop()
 		{
-			doLoop = false;
+			p.loop = false;
 		}
 		
-		public function fill( type = null)
+		public function fill( ... args ):void
 		{
 			doFill = true;
-			curContext.fillStyle = color.apply( this, arguments );
+			curFillColor = color.apply( this, args );
 		}
 		
-		public function stroke( type = null )
+		public function stroke( ... args ):void
 		{
 			doStroke = true;
-			curContext.strokeStyle = color.apply( this, arguments );
+			curStrokeColor = color.apply( this, args );
 		}
 	
-		public function strokeWeight( w )
+		public function strokeWeight( w:Number )
 		{
-			curContext.lineWidth = w;
+			curStrokeWeight = w;
 		}
 		
 		public function point( x, y )
@@ -1005,15 +790,10 @@ var window = {
 		
 		public function line( x1, y1, x2, y2 )
 		{
-			curContext.lineCap = "round";
-			curContext.beginPath();
-		
-			curContext.moveTo( x1 || 0, y1 || 0 );
-			curContext.lineTo( x2 || 0, y2 || 0 );
-			
-			curContext.stroke();
-			
-			curContext.closePath();
+			beginShapeDrawing();
+			shape.graphics.moveTo( x1 || 0, y1 || 0 );
+			shape.graphics.lineTo( x2 || 0, y2 || 0 );
+			endShapeDrawing();
 		}
 	
 		public function bezier( x1, y1, x2, y2, x3, y3, x4, y4 )
@@ -1048,79 +828,52 @@ var window = {
 			endShape();
 		}
 		
-		public function rect( x, y, width, height )
+		public function rect( x:Number, y:Number, width:Number, height:Number )
 		{
-			if ( width == 0 && height == 0 )
-				return;
-	
-			curContext.beginPath();
-			
-			var offsetStart = 0;
-			var offsetEnd = 0;
-	
-			if ( curRectMode == CORNERS )
+			// modify rectange mode
+			switch (curRectMode)
 			{
+			    case CORNERS:
 				width -= x;
 				height -= y;
-			}
-			
-			if ( curRectMode == RADIUS )
-			{
+				break;
+
+			    case RADIUS:
 				width *= 2;
 				height *= 2;
+			    case CENTER:
+				x -= (width / 2);
+				y -= (height / 2);
+				break;
+
+			    default:
+				break;
 			}
-			
-			if ( curRectMode == CENTER || curRectMode == RADIUS )
-			{
-				x -= width / 2;
-				y -= height / 2;
-			}
-		
-			curContext.rect(
-				Math.round( x ) - offsetStart,
-				Math.round( y ) - offsetStart,
-				Math.round( width ) + offsetEnd,
-				Math.round( height ) + offsetEnd
-			);
-				
-			if ( doFill )
-				curContext.fill();
-				
-			if ( doStroke )
-				curContext.stroke();
-			
-			curContext.closePath();
+
+			// draw shape
+			beginShapeDrawing();
+			shape.graphics.drawRect(x, y, width, height);
+			endShapeDrawing();
 		}
 		
-		public function ellipse( x, y, width, height )
+		public function ellipse( x:Number, y:Number, width:Number, height:Number )
 		{
-			x = x || 0;
-			y = y || 0;
-	
-			if ( width <= 0 && height <= 0 )
-				return;
-	
-			curContext.beginPath();
-			
-			if ( curEllipseMode == RADIUS )
+			// modify ellipse mode
+			switch (curEllipseMode)
 			{
-				width *= 2;
-				height *= 2;
+			    case RADIUS:
+				break;
+
+			    default:
+				x -= (width / 2);
+				y -= (height / 2);
+				break;
 			}
-			
-			var offsetStart = 0;
-			
-			// Shortcut for drawing a circle
-			if ( width == height )
-				curContext.arc( x - offsetStart, y - offsetStart, width / 2, 0, Math.PI * 2, false );
-		
-			if ( doFill )
-				curContext.fill();
-				
-			if ( doStroke )
-				curContext.stroke();
-			
-			curContext.closePath();
+
+			// draw shape
+			beginShapeDrawing();
+			shape.graphics.drawEllipse(x, y, width, height);
+			endShapeDrawing();
 		}
 
 		public function link( href:String, target ):void
@@ -1211,5 +964,276 @@ var window = {
 
 			return data;
 		}
+
+		public function int( aNumber )
+		{
+			return Math.floor( aNumber );
+		}
+	
+		public function float( aNumber )
+		{
+			return typeof aNumber == "string" ?
+			    float( aNumber.charCodeAt(0) ) :
+			    parseFloat( aNumber );
+		}
+	
+		public function byte( aNumber )
+		{
+			return aNumber || 0;
+		}
+
+		//=========================================================
+		// Environment
+		//=========================================================
+
+		public function frameRate( aRate:Number ):void
+		{
+			p.canvas.stage.frameRate = aRate;
+//[TODO] eliminate stored frameRate
+			curFrameRate = aRate;
+		}
+
+		public function size( aWidth:Number, aHeight:Number ):void
+		{
+			// change image size (no need to preserve data)
+			canvas.bitmapData = new BitmapData( aWidth, aHeight);
+		}
+
+		//=========================================================
+		// Input
+		//=========================================================
+
+		// Time & Date
+
+		public function hour():Number
+		{
+			return (new Date).getHours();
+		}
+	
+		public function millis():Number
+		{
+			return (new Date).getTime() - start;
+		}
+	
+		public function year():Number
+		{
+			return (new Date).getFullYear();
+		}
+
+		public function minute():Number
+		{
+			return (new Date).getMinutes();
+		}
+	
+		public function month():Number
+		{
+			return (new Date).getMonth();
+		}
+	
+		public function day():Number
+		{
+			return (new Date).getDay();
+		}
+	
+		public function second():Number
+		{
+			return (new Date).getSeconds();
+		}
+
+		//=========================================================
+		// Math
+		//=========================================================
+
+		// Calculation
+
+		public function min( aNumber:Number, aNumber2:Number ):Number
+		{
+			return Math.min( aNumber, aNumber2 );
+		}
+	
+		public function max( aNumber:Number, aNumber2:Number ):Number
+		{
+			return Math.max( aNumber, aNumber2 );
+		}
+
+		public function round( aNumber:Number ):Number
+		{
+			return Math.round( aNumber );
+		}
+
+		public function dist( x1:Number, y1:Number, x2:Number, y2:Number ):Number
+		{
+			return Math.sqrt( Math.pow( x2 - x1, 2 ) + Math.pow( y2 - y1, 2 ) );
+		}
+
+		public function pow( aNumber:Number, aExponent:Number ):Number
+		{
+			return Math.pow( aNumber, aExponent );
+		}
+
+		public function floor( aNumber:Number ):Number
+		{
+			return Math.floor( aNumber );
+		}
+
+		public function sqrt( aNumber:Number ):Number
+		{
+			return Math.sqrt( aNumber );
+		}
+
+		public function abs( aNumber:Number ):Number
+		{
+			return Math.abs( aNumber );
+		}
+
+		public function constrain( aNumber:Number, aMin:Number, aMax:Number ):Number
+		{
+			return Math.min( Math.max( aNumber, aMin ), aMax );
+		}
+
+		public function norm( value:Number, istart:Number, istop:Number ):Number
+		{
+			return map( value, istart, istop, 0, 1 );
+		}
+
+		public function lerp( value1:Number, value2:Number, amt:Number ):Number
+		{
+			return value1 + ((value2 - value1) * amt);
+		}
+
+		public function sq( aNumber:Number ):Number
+		{
+			return Math.pow( aNumber, 2 );
+		}
+	
+		public function ceil( aNumber:Number ):Number
+		{
+			return Math.ceil( aNumber );
+		}
+
+		public function map( value:Number, istart:Number, istop:Number, ostart:Number, ostop:Number ):Number
+		{
+			return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
+		}
+
+		// Trigonometry
+
+		public function tan( aNumber:Number ):Number
+		{
+			return Math.tan( aNumber );
+		}
+
+		public function sin( aNumber:Number ):Number
+		{
+			return Math.sin( aNumber );
+		}
+		
+		public function cos( aNumber:Number ):Number
+		{
+			return Math.cos( aNumber );
+		}
+
+		public function degrees( aAngle:Number ):Number
+		{
+			return ( aAngle / Math.PI ) * 180;
+		}
+
+		public function atan2( aNumber:Number, aNumber2:Number ):Number
+		{
+			return Math.atan2( aNumber, aNumber2 );
+		}
+		
+		public function radians( aAngle:Number ):Number
+		{
+			return ( aAngle / 180 ) * Math.PI;
+		}
+
+		// Random
+
+		// From: http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
+		public function noise( x:Number, y:Number, z:Number = undefined ):Number
+		{
+			return arguments.length >= 2 ?
+				PerlinNoise_2D( x, y ) :
+				PerlinNoise_2D( x, x );
+		}
+	
+		private function Noise(x, y):Number
+		{
+			var n = x + y * 57;
+			n = (n<<13) ^ n;
+			return Math.abs(1.0 - (((n * ((n * n * 15731) + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0));
+		}
+	
+		private function SmoothedNoise(x, y):Number
+		{
+			var corners = ( Noise(x-1, y-1)+Noise(x+1, y-1)+Noise(x-1, y+1)+Noise(x+1, y+1) ) / 16;
+			var sides	 = ( Noise(x-1, y)	+Noise(x+1, y)	+Noise(x, y-1)	+Noise(x, y+1) ) /	8;
+			var center	=	Noise(x, y) / 4;
+			return corners + sides + center;
+		}
+	
+		private function InterpolatedNoise(x, y):Number
+		{
+			var integer_X		= Math.floor(x);
+			var fractional_X = x - integer_X;
+	
+			var integer_Y		= Math.floor(y);
+			var fractional_Y = y - integer_Y;
+	
+			var v1 = SmoothedNoise(integer_X,		 integer_Y);
+			var v2 = SmoothedNoise(integer_X + 1, integer_Y);
+			var v3 = SmoothedNoise(integer_X,		 integer_Y + 1);
+			var v4 = SmoothedNoise(integer_X + 1, integer_Y + 1);
+	
+			var i1 = Interpolate(v1 , v2 , fractional_X);
+			var i2 = Interpolate(v3 , v4 , fractional_X);
+	
+			return Interpolate(i1 , i2 , fractional_Y);
+		}
+	
+		private function PerlinNoise_2D(x, y):Number
+		{
+				var total = 0;
+				var p = 0.25;
+				var n = 3;
+	
+				for ( var i = 0; i <= n; i++ )
+				{
+						var frequency = Math.pow(2, i);
+						var amplitude = Math.pow(p, i);
+	
+						total = total + InterpolatedNoise(x * frequency, y * frequency) * amplitude;
+				}
+	
+				return total;
+		}
+	
+		private function Interpolate(a, b, x):Number
+		{
+			var ft = x * Math.PI;
+			var f = (1 - Math.cos(ft)) * .5;
+			return a*(1-f) + b*f;
+		}
+
+		public function randomSeed( aValue )
+		{
+			//[TODO]
+		}
+
+		public function random( aMin, aMax = null ):Number
+		{
+			return arguments.length == 2 ?
+				aMin + (Math.random() * (aMax - aMin)) :
+				Math.random() * aMin;
+		}
+
+		//=========================================================
+		// Constants
+		//=========================================================
+
+		public const HALF_PI:Number = Math.PI / 2;
+		public const TWO_PI:Number = Math.PI * 2;
+		public const PI:Number = Math.PI;
 	}
 }

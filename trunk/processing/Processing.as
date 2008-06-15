@@ -1,69 +1,55 @@
 ﻿package processing {
-	import com.gamemeal.html.Canvas;
-	import processing.*;
-	import asas.*;
+	import flash.display.Bitmap;
+	import flash.display.BitmapData;
+	import processing.Context;
+	import flash.events.MouseEvent;
 
 	public class Processing {
-		private var _canvas:Canvas;
-		public function get canvas():Canvas {
+		private var _canvas:Bitmap;
+		public function get canvas():Bitmap {
 			return _canvas;
 		}
 		
-		private var _context:ProcessingContext;
-		public function get context():ProcessingContext {
+		private var _context:Context;
+		public function get context():Context {
 			return _context;
 		}
 
 		public function Processing():void {
-			// create canvas object
-//[TODO] not hard-code that?
-			_canvas = new Canvas('processingCanvas', 200, 200);
+			// create canvas bitmap
+			_canvas = new Bitmap(new BitmapData(100, 100));
 			
 			// create processing context
-			_context = new ProcessingContext(this);
+			_context = new Context(this);
 		}
+
+		// loop switch
+		public var loop:Boolean = true;
+		public var inSetup:Boolean = false;
+		public var inDraw:Boolean = false;
 		
 		public function start():void {
+			// set default colors
 			context.stroke(0);
 			context.fill(255);
 		
+			// setup function
 			if (context.setup)
 			{
-				context.inSetup = true;
+				inSetup = true;
 				context.setup();
 			}
+			inSetup = false;
 			
-			context.inSetup = false;
-			
+			// draw function
 			if (context.draw)
 			{
-				if ( !context.doLoop )
-				{
-					context.redraw();
-				}
-				else
-				{
-					context.loop();
-				}
+				loop ? context.loop() : context.redraw();
 			}
+
+			// attach event listeners
+			canvas.stage.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
 /*
-			attach( curElement, "mousemove", function(e)
-			{
-				pmouseX = mouseX;
-				pmouseY = mouseY;
-				mouseX = e.clientX;
-				mouseY = e.clientY;
-	
-				if ( mouseMoved )
-				{
-					mouseMoved();
-				}			
-	
-				if ( mousePressed && mouseDragged )
-				{
-					mouseDragged();
-				}			
-			});
 			
 			attach( curElement, "mousedown", function(e)
 			{
@@ -141,6 +127,23 @@
 		
 		public function stop():void {
 //[TODO] remove items
+		}
+
+		private function mouseMoveHandler( e:MouseEvent )
+		{
+			context.pmouseX = context.mouseX;
+			context.pmouseY = context.mouseY;
+			context.mouseX = canvas.mouseX;
+			context.mouseY = canvas.mouseY;
+
+			if ( context.mouseMoved )
+			{
+				context.mouseMoved();
+			}
+			if ( /*context.mousePressed && */context.mouseDragged )
+			{
+				context.mouseDragged();
+			}			
 		}
 	}
 }

@@ -1,11 +1,12 @@
 package {
 	import flash.display.Sprite;
 	import processing.Processing;
+	import processing.Context;
 	import processing.Parser;
 	import mx.core.ByteArrayAsset;
 	import flash.utils.ByteArray;
 	
-	[SWF(width="200", height="200", frameRate="24", backgroundColor="#ffffff")]
+	[SWF(width="200", height="200", frameRate="60", backgroundColor="#ffffff")]
 	
         public class test extends Sprite {
 		[Bindable]
@@ -20,29 +21,35 @@ package {
 			// create processing object
 			var p:Processing = new Processing();
 			addChild(p.canvas);
+			var c:Context = p.context;
 			
 			// evaluate code
 //			var parser:Parser = new Parser();
 //			parser.evaluate(processingText, p);
 
-//******************************************************************************
+//*****************************************************************************
 // All Examples Written by Casey Reas and Ben Fry
 // unless otherwise stated.
-p.context.size(200, 200);
-p.context.smooth();
-p.context.background(0);
-p.context.strokeWeight(10);
-
-for(var i = 0; i < p.context.width; i++) {
-  var r = p.context.random(255);
-  var x = p.context.random(0, p.context.width);
-  p.context.stroke(r, 100);
-  p.context.line(i, 0, x, p.context.height);
+c.setup = function () 
+{
+  c.size(200, 200); 
+  c.noStroke();
+  c.colorMode(c.RGB, 255, 255, 255, 100);
+  c.rectMode(c.CENTER);
 }
-//******************************************************************************
+
+c.draw = function () 
+{
+  c.background(51); 
+  c.fill(255, 80);
+  c.rect(c.mouseX, height/2, c.mouseY/2+10, c.mouseY/2+10);
+  c.fill(255, 80);
+  c.rect(c.width-c.mouseX, c.height/2, ((c.height-c.mouseY)/2)+10, ((c.height-c.mouseY)/2)+10);
+}
+//*****************************************************************************
 			
 			// start processing
-//			p.start();
+			p.start();
 		}
 	}
 }
