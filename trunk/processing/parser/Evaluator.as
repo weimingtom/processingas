@@ -23,17 +23,13 @@ package processing.parser {
 		public function callMethod(func:String, args:Array = undefined) {
 			// parse args for statements
 			var parsedArgs:Array = [];
-			if (args)
-				for each (var i:* in args)
-					parsedArgs.push(i instanceof Statement ? i.execute(this) : i);
+			for each (var i:* in args)
+				parsedArgs.push(i instanceof Statement ? i.execute(this) : i);
 			return context[func].apply(context, parsedArgs);
 		}
 
-		public function defineVar(type:Object, name:String, value:* = undefined) {
-			// evaluate statements
-			if (value instanceof Statement)
-				value = value.execute(this);
-			context[name] = value;
+		public function defineVar(type:Object, name:String) {
+			context[name] = undefined;
 		}
 
 		public function loop(cond:Statement, block:Block) {
@@ -56,15 +52,15 @@ package processing.parser {
 			}
 		}
 
-		public function getValue(varName:String) {
+		public function getVar(varName:String) {
 			return context[varName];
 		}
 
-		public function setValue(varName:String, value:*) {
-			// check if value is a statement
+		public function setVar(varName:String, value:*) {
+			// parse statements
 			if (value instanceof Statement)
 				value = value.execute(this);
-			return context[varName] = value;
+			return (context[varName] = value);
 		}
 	}
 }
