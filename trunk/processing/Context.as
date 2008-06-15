@@ -19,10 +19,6 @@ package processing {
 	public class Context {
 		// processing object
 		private var p:Processing;
-		// public reference
-//[TODO] these shouldn't be public in context...
-		public function get processing():Processing { return p; }
-		public function get canvas():Bitmap { return p.canvas; }
 	
 		// init
 
@@ -49,7 +45,7 @@ package processing {
 		private var hasBackground:Boolean = false;
 		private var curRectMode:Number = CORNER;
 		private var curEllipseMode:Number = CENTER;
-		private var curBackground:* = 0xFFCCCCCC;
+		private var curBackground:*;
 		private var curFrameRate:Number = 60;
 		private var curShape:Number = POLYGON;
 		private var curShapeCount:Number = 0;
@@ -88,8 +84,8 @@ package processing {
 		public var setup:Function = undefined;
 		
 		// canvas width/height
-		public function get width():Number { return p.canvas.bitmapData.width; }
-		public function get height():Number { return p.canvas.bitmapData.height; }
+		public function get width():Number { return p.sprite.bitmapData.width; }
+		public function get height():Number { return p.sprite.bitmapData.height; }
 
 		// pixels array
 		public var pixels:Array;
@@ -114,7 +110,7 @@ package processing {
 
 		// fill
 		private var doFill:Boolean = true;
-		private var curFillColor:Number = 0xFF000000;
+		private var curFillColor:Number = 0xFFFFFFFF;
 
 		// shape drawing
 		private var shape:Shape = new Shape();
@@ -123,15 +119,15 @@ package processing {
 		private function beginShapeDrawing():void {
 			// set stroke
 			if (doStroke)
-				shape.graphics.lineStyle(curStrokeWeight, curStrokeColor,
-				    alpha(curStrokeColor) / opacityRange, true, 'normal',
+				shape.graphics.lineStyle(curStrokeWeight, curStrokeColor & 0xFFFFFF,
+				    alpha(curStrokeColor) / 255, true, 'normal',
 				    curStrokeCap, curStrokeCap);
 			else
 				shape.graphics.lineStyle();
 
 			// set fill
 			if (doFill)
-				shape.graphics.beginFill(curFillColor, alpha(curFillColor) / opacityRange);
+				shape.graphics.beginFill(curFillColor & 0xFFFFFF, alpha(curFillColor) / 255);
 		}
 
 		private function endShapeDrawing():void {
@@ -139,13 +135,12 @@ package processing {
 			shape.graphics.endFill();
 
 			// rasterize and clear shape
-			p.canvas.bitmapData.draw(shape, null, null, null, null, doSmooth);
+			p.sprite.bitmapData.draw(shape, null, null, null, null, doSmooth);
 			shape.graphics.clear();
 		}
 		
 		// color conversion
 //[TODO] should be a color datatype
-//[TODO] also i'm not sure if this function is entirely correct
 		public function color(... args):Number {
 			var aColor:Number = 0;
 
@@ -579,9 +574,11 @@ package processing {
 		
 		}
 		
-		public function translate( x, y )
+		public function translate( x:Number, y:Number ):void
 		{
-			curContext.translate( x, y );
+			// move canvas
+			//p.canvas.x += x;
+			//p.canvas.y += y;
 		}
 		
 		public function scale( x, y )
@@ -606,7 +603,6 @@ package processing {
 		
 		public function redraw()
 		{
-//[TODO] this function isn't exactly... correct
 			if ( hasBackground )
 			{
 				background();
@@ -614,9 +610,7 @@ package processing {
 			
 			p.inDraw = true;
 			pushMatrix();
-			p.canvas.bitmapData.lock();
 			draw();
-			p.canvas.bitmapData.unlock();
 			popMatrix();
 			p.inDraw = false;
 		}
@@ -664,7 +658,8 @@ package processing {
 			}
 			else
 			{
-				p.canvas.bitmapData.fillRect(new Rectangle(0, 0, width, height), curBackground);
+				// set background color
+				p.sprite.bitmapData.fillRect(new Rectangle(0, 0, width, height), curBackground);
 			}
 		}
 	
@@ -988,7 +983,7 @@ package processing {
 
 		public function frameRate( aRate:Number ):void
 		{
-			p.canvas.stage.frameRate = aRate;
+			p.sprite.stage.frameRate = aRate;
 //[TODO] eliminate stored frameRate
 			curFrameRate = aRate;
 		}
@@ -996,7 +991,7 @@ package processing {
 		public function size( aWidth:Number, aHeight:Number ):void
 		{
 			// change image size (no need to preserve data)
-			canvas.bitmapData = new BitmapData( aWidth, aHeight);
+			p.sprite.bitmapData = new BitmapData( aWidth, aHeight);
 		}
 
 		//=========================================================

@@ -5,9 +5,9 @@
 	import flash.events.MouseEvent;
 
 	public class Processing {
-		private var _canvas:Bitmap;
-		public function get canvas():Bitmap {
-			return _canvas;
+		private var _sprite:Bitmap;
+		public function get sprite():Bitmap {
+			return _sprite;
 		}
 		
 		private var _context:Context;
@@ -16,8 +16,8 @@
 		}
 
 		public function Processing():void {
-			// create canvas bitmap
-			_canvas = new Bitmap(new BitmapData(100, 100));
+			// create sprite bitmap
+			_sprite = new Bitmap(new BitmapData(100, 100));
 			
 			// create processing context
 			_context = new Context(this);
@@ -29,10 +29,6 @@
 		public var inDraw:Boolean = false;
 		
 		public function start():void {
-			// set default colors
-			context.stroke(0);
-			context.fill(255);
-		
 			// setup function
 			if (context.setup)
 			{
@@ -48,7 +44,7 @@
 			}
 
 			// attach event listeners
-			canvas.stage.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
+			sprite.stage.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
 /*
 			
 			attach( curElement, "mousedown", function(e)
@@ -133,8 +129,8 @@
 		{
 			context.pmouseX = context.mouseX;
 			context.pmouseY = context.mouseY;
-			context.mouseX = canvas.mouseX;
-			context.mouseY = canvas.mouseY;
+			context.mouseX = sprite.mouseX;
+			context.mouseY = sprite.mouseY;
 
 			if ( context.mouseMoved )
 			{

@@ -20,7 +20,7 @@ package {
 
 			// create processing object
 			var p:Processing = new Processing();
-			addChild(p.canvas);
+			addChild(p.sprite);
 			var c:Context = p.context;
 			
 			// evaluate code
@@ -30,21 +30,26 @@ package {
 //*****************************************************************************
 // All Examples Written by Casey Reas and Ben Fry
 // unless otherwise stated.
-c.setup = function () 
-{
+var max_distance;
+
+c.setup = function () {
   c.size(200, 200); 
+  c.smooth();
   c.noStroke();
-  c.colorMode(c.RGB, 255, 255, 255, 100);
-  c.rectMode(c.CENTER);
+  max_distance = c.dist(0, 0, c.width, c.height);
 }
 
-c.draw = function () 
+c.draw = function() 
 {
-  c.background(51); 
-  c.fill(255, 80);
-  c.rect(c.mouseX, height/2, c.mouseY/2+10, c.mouseY/2+10);
-  c.fill(255, 80);
-  c.rect(c.width-c.mouseX, c.height/2, ((c.height-c.mouseY)/2)+10, ((c.height-c.mouseY)/2)+10);
+  c.background(51);
+
+  for(var i = 0; i <= c.width; i += 20) {
+    for(var j = 0; j <= c.width; j += 20) {
+      var size = c.dist(c.mouseX, c.mouseY, i, j);
+      size = size/max_distance * 66;
+      c.ellipse(i, j, size, size);
+    }
+  }
 }
 //*****************************************************************************
 			
