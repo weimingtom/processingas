@@ -15,6 +15,7 @@ package processing {
 	import flash.display.Shape;
 	import flash.display.CapsStyle;
 	import flash.geom.Rectangle;
+	import flash.geom.Matrix;
 
 	public class Context {
 		// processing object
@@ -41,7 +42,6 @@ package processing {
 		private var curContext:Canvas;
 
 		// private state variables
-		private var loopStarted:Boolean = false;
 		private var hasBackground:Boolean = false;
 		private var curRectMode:Number = CORNER;
 		private var curEllipseMode:Number = CENTER;
@@ -114,9 +114,10 @@ package processing {
 
 		// shape drawing
 		private var shape:Shape = new Shape();
+		private var shapeMatrix:Matrix = new Matrix();
 		private var doSmooth:Boolean = false;
 
-		private function beginShapeDrawing():void {
+		private function beginShapeDrawing():void {			
 			// set stroke
 			if (doStroke)
 				shape.graphics.lineStyle(curStrokeWeight, curStrokeColor & 0xFFFFFF,
@@ -135,7 +136,7 @@ package processing {
 			shape.graphics.endFill();
 
 			// rasterize and clear shape
-			p.sprite.bitmapData.draw(shape, null, null, null, null, doSmooth);
+			p.sprite.bitmapData.draw(shape, shapeMatrix, null, null, null, doSmooth);
 			shape.graphics.clear();
 		}
 		
@@ -573,32 +574,41 @@ package processing {
 		{
 		
 		}
-		
+
+//[TODO] see effects order has on these!
 		public function translate( x:Number, y:Number ):void
 		{
-			// move canvas
-			//p.canvas.x += x;
-			//p.canvas.y += y;
+			shapeMatrix.translate(x, y);
 		}
 		
-		public function scale( x, y )
+		public function scale( x:Number, y:Number = undefined ):void
 		{
-			curContext.scale( x, y || x );
+			shapeMatrix.scale(x, y == undefined ? x : y);
 		}
 		
-		public function rotate( aAngle )
+		public function rotate( aAngle:Number ):void
 		{
-			curContext.rotate( aAngle );
+			// clear translation temporarily
+			var tx:Number = shapeMatrix.tx;
+			var ty:Number = shapeMatrix.ty;
+			shapeMatrix.tx = shapeMatrix.ty = 0;
+			
+			// rotate and translate
+			shapeMatrix.rotate(aAngle);
+			shapeMatrix.translate(tx, ty);
 		}
+		
+		private var matrixStack:Array = [];
 		
 		public function pushMatrix()
 		{
-			//[TODO] saveContext
+			matrixStack.push(shapeMatrix);
+			shapeMatrix = new Matrix();
 		}
 		
 		public function popMatrix()
 		{
-			//[TODO] restoreContext
+			shapeMatrix = matrixStack.pop();
 		}
 		
 		public function redraw()
@@ -617,23 +627,7 @@ package processing {
 		
 		public function loop()
 		{
-			if ( loopStarted )
-				return;
-			
-			var looping = setInterval(function()
-			{
-				try
-				{
-					redraw();
-				}
-				catch(e)
-				{
-					clearInterval( looping );
-					throw e;
-				}
-			}, 1000 / curFrameRate );
-			
-			loopStarted = true;
+			p.loop = false;
 		}
 		
 		public function background( img = null )
@@ -859,7 +853,7 @@ package processing {
 			    case RADIUS:
 				break;
 
-			    default:
+			    case CENTER:
 				x -= (width / 2);
 				y -= (height / 2);
 				break;

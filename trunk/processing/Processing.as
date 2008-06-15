@@ -3,6 +3,7 @@
 	import flash.display.BitmapData;
 	import processing.Context;
 	import flash.events.MouseEvent;
+	import flash.events.Event;
 
 	public class Processing {
 		private var _sprite:Bitmap;
@@ -40,11 +41,12 @@
 			// draw function
 			if (context.draw)
 			{
-				loop ? context.loop() : context.redraw();
+				context.redraw();
 			}
 
 			// attach event listeners
-			sprite.stage.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
+			sprite.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			sprite.addEventListener(Event.ENTER_FRAME, onEnterFrame);
 /*
 			
 			attach( curElement, "mousedown", function(e)
@@ -125,7 +127,7 @@
 //[TODO] remove items
 		}
 
-		private function mouseMoveHandler( e:MouseEvent )
+		private function onMouseMove( e:MouseEvent )
 		{
 			context.pmouseX = context.mouseX;
 			context.pmouseY = context.mouseY;
@@ -140,6 +142,15 @@
 			{
 				context.mouseDragged();
 			}			
+		}
+
+		private function onEnterFrame( e:Event )
+		{
+			if (loop && context.draw)
+			{
+//[TODO] redraw isn't... right
+				context.redraw();
+			}
 		}
 	}
 }
