@@ -24,10 +24,16 @@ package {
 			addChild(p.sprite);
 			var c:Context = p.context;
 			
+			// try some parsin'
+			var evaluator:Evaluator = new Evaluator(p.context);
+//			var parser:Parser = new Parser(new Tokenizer(), evaluator);
+//			var evaluator:Evaluator = new Evaluator(p.context)
+//			parser.parse(processingText);
+//			evaluator.evaluate(parser.parse(processingText));
+			
 			// evaluate code
 //			var parser:Parser = new Parser();
 //			parser.evaluate(processingText, p);
-			var evaluator:Evaluator = new Evaluator(p.context);
 //			evaluator.evaluate();
 
 //*****************************************************************************

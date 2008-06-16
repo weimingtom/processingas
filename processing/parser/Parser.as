@@ -1,7 +1,65 @@
 package processing.parser {
-	import flash.utils.*;
-
+	import processing.parser.Block;
+	import processing.parser.Statement;
+	import processing.parser.Tokenizer;
+	import processing.parser.Evaluator;
+	
 	public class Parser {
+		public var tokenizer:Tokenizer;
+	
+		public function Parser(t:Tokenizer = undefined) {
+			tokenizer = t;
+		}
+		
+		public function parse(code:String):Block {
+			// initialize tokenizer
+			tokenizer.load(code);
+			
+			// parse block
+			var block:Block = new Block();
+			while (!tokenizer.done && t.peek() != Token.RIGHT_CURLY)
+				parseStatement(block);
+			if (!tokenizer.done)
+				throw new TokenizerSyntaxError('Syntax error', tokenizer);
+			return block;
+		}
+		
+		private function parseStatement(block:Block):void {
+			// parse current statement line
+			var token:Token = tokenizer.get();
+			switch (token.type)
+			{
+			    // variables
+			    case TokenType.VAR:
+				parseVariables(block);
+				break;
+			}
+		}
+		
+		private function parseVariables(block:Block):void {
+			do {
+				// add definitions
+				tokenizer.match(TokenType.IDENTIFIER, true);
+				var definition = tokenizer.get();
+				block.push(new Statement('defineVar', [
+				
+				t.mustMatch(Token.IDENTIFIER);
+				var n2 = new Node(t);
+				n2.name = n2.value;
+				if (t.match(Token.ASSIGN)) {
+					if (t.token.assignOp)
+						throw t.newSyntaxError("Invalid variable initialization");
+					n2.initializer = Expression(t, x, Token.COMMA);
+				}
+				n2.readOnly = (n.type == Token.CONST);
+				n.push(n2);
+				x.varDecls.push(n2);
+			} while (t.match(Token.COMMA));
+			return n;
+		}
+	
+	
+	/*
 		public static function Script(t, x) {
 			var n:Node = Statements(t, x);
 			n.type = Token.SCRIPT;
@@ -633,6 +691,6 @@ package processing.parser {
 			if (!t.done)
 				throw t.newSyntaxError("Syntax error");
 			return n;
-		}
+		}*/
 	}
 }

@@ -1,77 +1,112 @@
 package processing.parser {
-	dynamic public class Tokenizer {
-		public var cursor;
-		public var source;
-		public var tokens;
-		public var tokenIndex;
-		public var lookahead;
-		public var scanNewlines;
-		public var scanOperand;
-		public var filename;
-		public var lineno;
+	import processing.parser.*;
+	
+	public class Tokenizer {
+		public var source:String = '';
+		public var cursor:int = 0;
+		public var line:int = 1;
+		public var scanOperand:Boolean = true;
 		
-		public function Tokenizer(s, f:String = '', l:uint = 0) {
-			this.cursor = 0;
-			this.source = String(s);
-			this.tokens = [];
-			this.tokenIndex = 0;
-			this.lookahead = 0;
-			this.scanNewlines = false;
-			this.scanOperand = true;
-			this.filename = f || "";
-			this.lineno = l || 1;
+		public function Tokenizer(s:String = '', l:int = 1):void {
+			source = s;
+			line = l;
 		}
+		
+		public function load(s:String) {
+			source = s;
+		}
+		
+		public function peek(lookAhead:int = 1, onSameLine:Boolean = false):Token {
+			// init variables
+			var peekCursor:Number = cursor, peekLine:Number = line;
+			for (var token:Token; lookAhead; lookAhead--) {
+				// eliminate whitespace/comments
+				while (true) {
+					var input = source.substring(peekCursor);
+					var match = (onSameLine ? /^[ \t]+/ : /^\s+/)(input);
+					if (match) {
+						var spaces = match[0];
+						peekCursor += spaces.length;
+						if (spaces.match(/\n/))
+							peekLine += spaces.match(/\n/g).length;
+						input = source.substring(peekCursor);
+					}
 			
-		public function get input() {
-			return this.source.substring(this.cursor);
-		}
-	
-		public function get done() {
-			return this.peek() == Token.END;
-		}
-	
-		public function get token() {
-			return this.tokens[this.tokenIndex];
-		}
+					if (!(match = /^\/(?:\*(?:.|\n|\r)*?\*\/|\/.*)/(input)))
+						break;
+					var comment = match[0];
+					peekCursor += comment.length;
+					if (comment.match(/\n/))
+						peekLine += comment.match(/\n/g).length;
+				}
+							
+				// find next token
+				if ((match = /^$/(input)))
+				{
+					// end
+					token = new Token(TokenType.END);
+				}
+				else if ((match = /^\d+\.\d*(?:[eE][-+]?\d+)?|^\d+(?:\.\d*)?[eE][-+]?\d+|^\.\d+(?:[eE][-+]?\d+)?/(input)))
+				{
+					// float
+					token = new Token(TokenType.NUMBER, parseFloat(match[0]));
+				}
+				else if ((match = /^0[xX][\da-fA-F]+|^0[0-7]*|^\d+/(input)))
+				{
+					// integer
+					token = new Token(TokenType.NUMBER, parseInt(match[0]));
+				}
+				else if ((match = /^\w+/(input)))
+				{
+					// keyword/identifier
+					var id:String = match[0];
+					token = new Token((TokenType.KEYWORDS[id] is TokenType ?
+					    TokenType.KEYWORDS[id] : TokenType.IDENTIFIER), id);
+				}
+				else if ((match = /^"(?:\\.|[^"])*"|^'(?:[^']|\\.)*'/(input)))
+				{
+					// string
+					token = new Token(TokenType.STRING, parseStringLiteral(match[0].substring(1, match[0].length - 1)));
+				}
+				else if (scanOperand && (match = /^\/((?:\\.|[^\/])+)\/([gimy]*)/(input)))
+				{
+					// regexp
+					token = new Token(TokenType.REGEXP, new RegExp(parseStringLiteral(match[1]), match[2]));
+				}
+				else if ((match = /^(\|\||&&|===?|!==?|<<|<=|>>>?|>=|\+\+|--|[;,?:|^&=<>+\-*\/%!~.[\]{}()])/(input)))
+				{
+					// operator
+					var op:String = match[0];
+					if (TokenType.ASSIGNMENT_OPS[op] && input.charAt(op.length) == '=') {
+						token = new Token(TokenType.ASSIGN, op);
+						token.assignOp = TokenType.OPS[op];
+						match[0] += '=';
+					} else {
+						token = new Token(TokenType.OPS[op], op);
+						if (scanOperand) {
+							if (token.type == TokenType.PLUS)
+								token.type = TokenType.UNARY_PLUS;
+							if (token.type == TokenType.MINUS)
+								token.type = TokenType.UNARY_MINUS;
+						}
+						token.assignOp = null;
+					}
+				}
+				else
+				{
+					throw new TokenizerSyntaxError('Illegal token ' + input, this);
+				}
 		
-		public function match(tt) {
-			return this.get() == tt || this.unget();
-		}
-	
-		public function mustMatch(tt) {
-			if (!this.match(tt))
-				throw this.newSyntaxError("Missing " + Token.getConstant(tt));
-			return this.token;
-		}
-	
-		public function peek() {
-			var tt;
-			if (this.lookahead) {
-				tt = this.tokens[(this.tokenIndex + this.lookahead) & 3].type;
-			} else {
-				tt = this.get();
-				this.unget();
+				// set token properties
+				token.content = match[0];
+				token.start = peekCursor;
+				token.line = peekLine;
+				
+				// move cursor
+				peekCursor += token.content.length;
 			}
-			return tt;
-		}
-	
-		public function peekOnSameLine() {
-			this.scanNewlines = true;
-			var tt = this.peek();
-			this.scanNewlines = false;
-			return tt;
-		}
-	
-		public function unget() {
-			if (++this.lookahead == 4) throw "PANIC: too much lookahead!";
-			this.tokenIndex = (this.tokenIndex - 1) & 3;
-		}
-	
-		public function newSyntaxError(m) {
-			var e = new SyntaxError(m);
-			e.source = this.source;
-			e.cursor = this.cursor;
-			return e;
+			
+			return token;
 		}
 		
 		private function parseStringLiteral(str:String):String {
@@ -85,93 +120,34 @@ package processing.parser {
 			    .replace(/((?:[^\\]|^)(?:\\\\)+)\\r/g, '$1\u000D')
 			    .replace(/((?:[^\\]|^)(?:\\\\)+)\\"/g, '$1"')
 			    .replace(/((?:[^\\]|^)(?:\\\\)+)\\'/g, "$1'")
-			    .replace(/((?:[^\\]|^)(?:\\\\)+)\\u([0-9A-Fa-z]{4})/g, function (str, opening, code) {
-				    return opening + String.fromCharCode(parseInt(code, 16));
+			    .replace(/((?:[^\\]|^)(?:\\\\)+)\\u([0-9A-Fa-z]{4})/g,
+				function (str:String, opening:String, code:String):String {
+					return opening + String.fromCharCode(parseInt(code, 16));
 				})
 			    .replace(/((?:[^\\]|^)(?:\\\\)+)\\\\/g, '\\');
 		}
 		
-		public function get() {
-			var token:Object;
-			while (this.lookahead) {
-				--this.lookahead;
-				this.tokenIndex = (this.tokenIndex + 1) & 3;
-				token = this.tokens[this.tokenIndex];
-				if (token.type != Token.NEWLINE || this.scanNewlines)
-					return token.type;
-			}
+		public var _currentToken:Token;
+		public function get currentToken() { return _currentToken; }
 	
-			for (; ; ) {
-				var input = this.input;
-				var match = (this.scanNewlines ? /^[ \t]+/ : /^\s+/)(input);
-				if (match) {
-					var spaces = match[0];
-					this.cursor += spaces.length;
-					var newlines = spaces.match(/\n/g);
-					if (newlines)
-						this.lineno += newlines.length;
-					input = this.input;
-				}
+		public function get():Token {
+			// get next token
+			_currentToken = peek();
+			// move variables
+			cursor += currentToken.content.length;
+			line = currentToken.line;
+			return currentToken;
+		}
 		
-				if (!(match = /^\/(?:\*(?:.|\n|\r)*?\*\/|\/.*)/(input)))
-					break;
-				var comment = match[0];
-				this.cursor += comment.length;
-				newlines = comment.match(/\n/g);
-				if (newlines)
-					this.lineno += newlines.length;
-			}
-	
-			this.tokenIndex = (this.tokenIndex + 1) & 3;
-			token = this.tokens[this.tokenIndex];
-			if (!token)
-				this.tokens[this.tokenIndex] = token = {};
-	
-			if (!input)
-				return token.type = Token.END;
-
-			if ((match = /^\d+\.\d*(?:[eE][-+]?\d+)?|^\d+(?:\.\d*)?[eE][-+]?\d+|^\.\d+(?:[eE][-+]?\d+)?/(input))) {
-				token.type = Token.NUMBER;
-				token.value = parseFloat(match[0]);
-			} else if ((match = /^0[xX][\da-fA-F]+|^0[0-7]*|^\d+/(input))) {
-				token.type = Token.NUMBER;
-				token.value = parseInt(match[0]);
-			} else if ((match = /^\w+/(input))) {
-				var id:String = match[0];
-				token.type = Token.KEYWORDS[id] is TokenType ? Token.KEYWORDS[id] : Token.IDENTIFIER;
-				token.value = id;
-			} else if ((match = /^"(?:\\.|[^"])*"|^'(?:[^']|\\.)*'/(input))) {
-				// string ""
-				token.type = Token.STRING;
-				token.value = parseStringLiteral(match[0].substring(1, match[0].length - 1));
-			} else if (this.scanOperand &&
-					   (match = /^\/((?:\\.|[^\/])+)\/([gimy]*)/(input))) {
-				token.type = Token.REGEXP;
-				token.value = new RegExp(parseStringLiteral(match[1]), match[2]);
-			} else if ((match = /^(\|\||&&|===?|!==?|<<|<=|>>>?|>=|\+\+|--|[;,?:|^&=<>+\-*\/%!~.[\]{}()])/(input))) {
-				var op:String = match[0];
-				if (Token.ASSIGNMENT_OPS[op] && input.charAt(op.length) == '=') {
-					token.type = Token.ASSIGN;
-					token.assignOp = Token.OPS[op];
-					match[0] += '=';
-				} else {
-					token.type = Token.OPS[op];
-					if (this.scanOperand) {
-						if (token.type == Token.PLUS) token.type = Token.UNARY_PLUS;
-						if (token.type == Token.MINUS) token.type = Token.UNARY_MINUS;
-					}
-					token.assignOp = null;
-				}
-				token.value = op;
-			} else {
-				throw this.newSyntaxError("Illegal token " + input);
-			}
-	
-			token.start = this.cursor;
-			this.cursor += match[0].length;
-			token.end = this.cursor;
-			token.lineno = this.lineno;
-			return token.type;
+		public function match(matchType:TokenType, mustMatch:Boolean = false):Boolean {
+			var doesMatch:Boolean = peek().type == matchType;
+			if (mustMatch && !doesMatch)
+				throw new TokenizerSyntaxError('Missing ' + TokenType.getConstant(mustMatch));
+			return doesMatch;
+		}
+		
+		public function get done():Boolean {
+			return match(TokenType.END);
 		}
 	}
 }
