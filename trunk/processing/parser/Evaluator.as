@@ -19,6 +19,10 @@ package processing.parser {
 		public function evaluate(code:*):* {
 			return code.execute(this);
 		}
+		
+		//--------------------------------------------------------------
+		// execution methods
+		//--------------------------------------------------------------
 
 		public function callMethod(func:String, args:Array = undefined) {
 			// parse args for statements
