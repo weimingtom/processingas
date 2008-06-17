@@ -73,6 +73,9 @@ package processing.parser {
 		public static const GROUP:TokenType = new TokenType('GROUP', null, 1);
 		public static const LIST:TokenType = new TokenType('LIST');
 		
+		// ...something
+		public static const CONSTRUCTOR:TokenType = new TokenType('CONSTRUCTOR');
+		
 		// terminals
 		public static const IDENTIFIER:TokenType = new TokenType('IDENTIFIER');
 		public static const NUMBER:TokenType = new TokenType('NUMBER');
@@ -179,6 +182,7 @@ package processing.parser {
 		
 		// keywords
 		public static const BREAK:TokenType = new TokenType();
+		public static const CLASS:TokenType = new TokenType();
 		public static const CASE:TokenType = new TokenType();
 		public static const CATCH:TokenType = new TokenType();
 		public static const CONST:TokenType = new TokenType();
@@ -198,6 +202,8 @@ package processing.parser {
 		public static const INSTANCEOF:TokenType = new TokenType('instanceof', 10, 2);
 		public static const NEW:TokenType = new TokenType('new', 16, 1);
 		public static const NULL:TokenType = new TokenType();
+		public static const PUBLIC:TokenType = new TokenType('public');
+		public static const PRIVATE:TokenType = new TokenType('private');
 		public static const RETURN:TokenType = new TokenType();
 		public static const SWITCH:TokenType = new TokenType();
 		public static const THIS:TokenType = new TokenType();
@@ -216,6 +222,7 @@ package processing.parser {
 // can trip on KEYWORDS[toString]...!
 		public static const KEYWORDS:Object = {
 			'break':	BREAK,
+			'class':	CLASS,
 			'case':		CASE,
 			'catch':	CATCH,
 			'const':	CONST,
@@ -235,6 +242,8 @@ package processing.parser {
 			'instanceof':	INSTANCEOF,
 			'new':		NEW,
 			'null':		NULL,
+			'public':	PUBLIC,
+			'private':	PRIVATE,
 			'return':	RETURN,
 			'switch':	SWITCH,
 			'this':		THIS,

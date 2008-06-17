@@ -22,18 +22,44 @@ package processing.parser {
 
 		public function callMethod(context:EvaluatorContext, func:*, args:Array = undefined) {
 			// evaluate statements
-			if (func instanceof Statement)
+			if (func is Statement)
 				func = func.execute(context);
 			// parse args for statements
 			var parsedArgs:Array = [];
 			for each (var i:* in args)
-				parsedArgs.push(i instanceof Statement ? i.execute(context) : i);
-
+				parsedArgs.push(i is Statement ? i.execute(context) : i);
+		
 			// apply function
 			return func.apply(context, parsedArgs);
 		}
+		
+		public function createInstance(context:EvaluatorContext, func:*, args:Array = undefined) {
+			// evaluate statements
+			if (func is Statement)
+				func = func.execute(context);
+			// parse args for statements
+			var parsedArgs:Array = [];
+			for each (var i:* in args)
+				parsedArgs.push(i is Statement ? i.execute(context) : i);
+			
+			// create object instance
+			switch (args.length)
+			{
+				case 0: return new func();
+				case 1: return new func(args[0]);
+				case 2: return new func(args[0], args[1]);
+				case 3: return new func(args[0], args[1], args[2]);
+				case 4: return new func(args[0], args[1], args[2], args[3]);
+				case 5: return new func(args[0], args[1], args[2], args[3], args[4]);
+				case 6: return new func(args[0], args[1], args[2], args[3], args[4], args[5]);
+				case 7: return new func(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+				case 8: return new func(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
+				case 9: return new func(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+				default: throw new Error('Constructor called with too many arguments.');
+			}
+		}
 
-		public function defineVar(context:EvaluatorContext, name:String, type:TokenType) {
+		public function defineVar(context:EvaluatorContext, name:String, type:*) {
 //[TODO] do something with type
 			context.scope[name] = undefined;
 		}
@@ -41,6 +67,9 @@ package processing.parser {
 		public function defineFunction(context:EvaluatorContext, name:String, type:TokenType, params:Array, body:Block) {
 //[TODO] do something with type
 			context.scope[name] = function (... args) {
+				// check that this is called as a function
+//[TODO] that
+
 				// create new evaluator context
 				var funcContext:EvaluatorContext = new EvaluatorContext({}, context);
 
@@ -55,6 +84,28 @@ package processing.parser {
 				return body.execute(funcContext);
 			}
 		}
+		
+		public function defineClass(context:EvaluatorContext, className:String, constructor:Statement, publicBody:Block, privateBody:Block) {
+			context.scope[className] = function (... args) {
+				// check that this is called as a constructor
+//[TODO] that
+			
+				// create new evaluator contexts
+//[TODO] really this should modify .prototype...
+				var objContext:EvaluatorContext = new EvaluatorContext(this, context);
+				var classContext:EvaluatorContext = new EvaluatorContext({}, objContext);
+				
+				// define variables
+				publicBody.execute(objContext);
+				privateBody.execute(classContext);
+
+				// call constructor
+				if (constructor) {
+					constructor.execute(classContext);
+					callMethod(classContext, classContext.scope[className], args);
+				}
+			}
+		}
 
 		public function loop(context:EvaluatorContext, condition:*, body:Block) {
 			while (condition is Statement ? condition.execute(context) : condition)
@@ -66,6 +117,17 @@ package processing.parser {
 				thenBlock.execute(context);
 			else if (elseBlock)
 				elseBlock.execute(context);
+		}
+		
+		public function useScope(context:EvaluatorContext, scope:*, statement:*) {
+			// evaluate scope
+			if (scope instanceof Statement)
+				scope = scope.execute(context);
+
+			// execute statement using scope
+			if (statement instanceof Statement)
+				statement = statement.execute(new EvaluatorContext(scope));
+			return statement;
 		}
 
 		public function expression(context:EvaluatorContext, a:*, b:*, type:TokenType) {

@@ -16,7 +16,8 @@ package processing.parser {
 		
 		public function debug(evaluator:Evaluator, indent = 0):void {
 			var name = '', ind = '';
-			for each (var i in ['callMethod', 'defineVar', 'defineFunction', 'loop', 'expression', 'getVar', 'setVar', 'conditional'])
+			for each (var i in ['callMethod', 'createInstance', 'defineVar', 'defineFunction', 'defineClass',
+			    'loop', 'conditional', 'useScope', 'expression', 'getVar', 'setVar'])
 				if (func == evaluator[i])
 					name = i;
 			for (var l = 0; l < indent; l++)
