@@ -1,7 +1,6 @@
 package {
 	import flash.display.Sprite;
-	import processing.Processing;
-	import processing.Context;
+	import processing.api.*;
 	import processing.parser.*;
 	import mx.core.ByteArrayAsset;
 	import flash.utils.ByteArray;

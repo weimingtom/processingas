@@ -1,4 +1,4 @@
-package processing {
+package processing.api {
 	public class Point {
 		public var x:Number = 0;
 		public var y:Number = 0;
