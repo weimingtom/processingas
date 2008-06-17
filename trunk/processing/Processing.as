@@ -30,6 +30,11 @@
 		public var inDraw:Boolean = false;
 		
 		public function start():void {
+			// set defaults
+			context.stroke(0);
+			context.fill(255);
+			context.noSmooth();
+		
 			// setup function
 			if (context.setup)
 			{

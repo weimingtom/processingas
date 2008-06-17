@@ -2,17 +2,13 @@ package processing.parser {
 	import processing.parser.*;
 
 	public class Evaluator {
-		// constants
-		private var context:Object = {};
-
-		public function Evaluator(c:Object):void {
-//[TODO] do a real context...
-			context = c;
+		public function Evaluator():void {
 		}
 
-//[TODO] what parameter should this take?
-		public function evaluate(code:*):* {
-			return code.execute(this);
+//[TODO] what parameters should this take?
+		public function evaluate(code:*, x:EvaluatorContext = null):* {
+			// execute code
+			return code.execute(x || new EvaluatorContext());
 		}
 		
 		//--------------------------------------------------------------
@@ -24,42 +20,60 @@ package processing.parser {
 //        - would compilicate everything else
 //        - will getVar ever be called with a Statement? makes case that String shouldn't be supported...
 
-		public function callMethod(func:*, args:Array = undefined) {
+		public function callMethod(context:EvaluatorContext, func:*, args:Array = undefined) {
 			// evaluate statements
 			if (func instanceof Statement)
-				func = func.execute(this);
+				func = func.execute(context);
 			// parse args for statements
 			var parsedArgs:Array = [];
 			for each (var i:* in args)
-				parsedArgs.push(i instanceof Statement ? i.execute(this) : i);
+				parsedArgs.push(i instanceof Statement ? i.execute(context) : i);
 
 			// apply function
 			return func.apply(context, parsedArgs);
 		}
 
-		public function defineVar(name:String, type:TokenType) {
+		public function defineVar(context:EvaluatorContext, name:String, type:TokenType) {
 //[TODO] do something with type
-			context[name] = undefined;
+			context.scope[name] = undefined;
 		}
 
-		public function defineFunction(name:String, block:Block) {
-			var evaluator:Evaluator = this;
-			context[name] = function () {
-				return block.execute(evaluator);
+		public function defineFunction(context:EvaluatorContext, name:String, type:TokenType, params:Array, body:Block) {
+//[TODO] do something with type
+			context.scope[name] = function (... args) {
+				// create new evaluator context
+				var funcContext:EvaluatorContext = new EvaluatorContext({}, context);
+
+				// parse args
+				for (var i in args) {
+//[TODO] what happens when args/params differ?
+					defineVar(funcContext, params[i][0], params[i][1]);
+					setVar(funcContext, params[i][0], args[i]);
+				}
+				
+				// evaluate body
+				return body.execute(funcContext);
 			}
 		}
 
-		public function loop(cond:*, block:Block) {
-			while (cond is Statement ? cond.execute(this) : cond)
-				block.execute(this);
+		public function loop(context:EvaluatorContext, condition:*, body:Block) {
+			while (condition is Statement ? condition.execute(context) : condition)
+				body.execute(context);
+		}
+		
+		public function conditional(context:EvaluatorContext, condition:*, thenBlock:Block, elseBlock:Block = null) {
+			if (condition is Statement ? condition.execute(context) : condition)
+				thenBlock.execute(context);
+			else if (elseBlock)
+				elseBlock.execute(context);
 		}
 
-		public function expression(a:*, b:*, type:TokenType) {
+		public function expression(context:EvaluatorContext, a:*, b:*, type:TokenType) {
 			// evaluate statements
 			if (a instanceof Statement)
-				a = a.execute(this);
+				a = a.execute(context);
 			if (b instanceof Statement)
-				b = b.execute(this);
+				b = b.execute(context);
 
 			// execute expression
 			switch (type) {
@@ -90,15 +104,18 @@ package processing.parser {
 			}
 		}
 
-		public function getVar(varName:String) {
-			return context[varName];
+//[TODO] varName will absolutely have to be a reference object in the future
+		public function getVar(context:EvaluatorContext, varName:String) {
+			for (var c:EvaluatorContext = context; !c.scope.hasOwnProperty(varName) && c.parent; c = c.parent);
+			return (c.scope.hasOwnProperty(varName) ? c : context).scope[varName];
 		}
 
-		public function setVar(varName:String, value:*) {
+		public function setVar(context:EvaluatorContext, varName:String, value:*) {
 			// parse statements
 			if (value instanceof Statement)
-				value = value.execute(this);
-			return (context[varName] = value);
+				value = value.execute(context);
+			for (var c:EvaluatorContext = context; !c.scope.hasOwnProperty(varName) && c.parent; c = c.parent);
+			return ((c.scope.hasOwnProperty(varName) ? c : context).scope[varName] = value);
 		}
 	}
 }
