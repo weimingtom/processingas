@@ -1,6 +1,7 @@
 package processing.parser {
 	import processing.parser.*;
 	
+//[TODO] might want to take cues from a real Tokenizer class....
 	public class Tokenizer {
 		public var source:String = '';
 		public var cursor:int = 0;
@@ -12,16 +13,20 @@ package processing.parser {
 			line = l;
 		}
 		
-		public function load(s:String) {
+		public function load(s:String = '', l:int = 1) {
+			// load source and reset location
 			source = s;
+			cursor = 0;
+			line = l;
+			scanOperand = true;
 		}
 		
-		public function peek(lookAhead:int = 1, onSameLine:Boolean = false):Token {
+		public function peek(onSameLine:Boolean = false, lookAhead:int = 1):Token {
 			// init variables
 			var peekCursor:Number = cursor, peekLine:Number = line;
 			for (var token:Token; lookAhead; lookAhead--) {
-				// eliminate whitespace/comments
 				while (true) {
+					// eliminate whitespace
 					var input = source.substring(peekCursor);
 					var match = (onSameLine ? /^[ \t]+/ : /^\s+/)(input);
 					if (match) {
@@ -32,6 +37,7 @@ package processing.parser {
 						input = source.substring(peekCursor);
 					}
 			
+					// eliminate comments
 					if (!(match = /^\/(?:\*(?:.|\n|\r)*?\*\/|\/.*)/(input)))
 						break;
 					var comment = match[0];
@@ -73,7 +79,7 @@ package processing.parser {
 					// regexp
 					token = new Token(TokenType.REGEXP, new RegExp(parseStringLiteral(match[1]), match[2]));
 				}
-				else if ((match = /^(\|\||&&|===?|!==?|<<|<=|>>>?|>=|\+\+|--|[;,?:|^&=<>+\-*\/%!~.[\]{}()])/(input)))
+				else if ((match = /^(\n|\|\||&&|===?|!==?|<<|<=|>>>?|>=|\+\+|--|[;,?:|^&=<>+\-*\/%!~.[\]{}()])/(input)))
 				{
 					// operator
 					var op:String = match[0];
@@ -134,15 +140,17 @@ package processing.parser {
 			// get next token
 			_currentToken = peek();
 			// move variables
-			cursor += currentToken.content.length;
+			cursor = currentToken.start + currentToken.content.length;
 			line = currentToken.line;
 			return currentToken;
 		}
 		
 		public function match(matchType:TokenType, mustMatch:Boolean = false):Boolean {
-			var doesMatch:Boolean = peek().type == matchType;
-			if (mustMatch && !doesMatch)
-				throw new TokenizerSyntaxError('Missing ' + TokenType.getConstant(mustMatch));
+			var doesMatch:Boolean = (peek().type == matchType);
+			if (doesMatch)
+				get();
+			else if (mustMatch)
+				throw new TokenizerSyntaxError('Missing ' + TokenType.getConstant(matchType));
 			return doesMatch;
 		}
 		

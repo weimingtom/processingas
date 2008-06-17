@@ -16,5 +16,19 @@ package processing.parser {
 			line = l;
 			assignOp = a;
 		}
+		
+		public function match(compareType:TokenType):Boolean {
+			return (type == compareType); 
+		}
+		
+		public function debug() {
+			trace('token {');
+			trace('\ttype: ' + TokenType.getConstant(type));
+			trace('\tvalue: "' + value + '"');
+			trace('\tstart: ' + start);
+			trace('\tcontent: "' + content + '"');
+			trace('\tline: ' + line);
+			trace('}');
+		}
 	}
 }

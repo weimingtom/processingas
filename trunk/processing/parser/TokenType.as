@@ -44,9 +44,9 @@ package processing.parser {
 		
 		// get token constant (if one exists)
 		public static function getConstant(token:TokenType):String {
-			 var description:XML = describeType(Token);
+			 var description:XML = describeType(TokenType);
 			 for each (var constant:XML in description..constant)
-				if (Token[constant.@name] == token)
+				if (TokenType[constant.@name] == token)
 					return constant.@name;
 			return null;
 		}
