@@ -8,12 +8,12 @@ package processing.parser {
 				push(statement);
 		}
 
-		public function execute(evaluator:Evaluator) {
 //[TODO] should literals be wrapped in Statement functions?
+		public function execute(context:EvaluatorContext) {
 			// iterate block
 			var retValue:*;
 			for each (var statement:* in this)
-				retValue = (statement is Statement) ? statement.execute(evaluator) : statement;
+				retValue = (statement is Statement) ? statement.execute(context) : statement;
 			return retValue;
 		}
 		

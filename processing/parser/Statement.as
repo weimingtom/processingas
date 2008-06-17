@@ -10,13 +10,13 @@ package processing.parser {
 			args = a ? a : [];
 		}
 
-		public function execute(evaluator:Evaluator):* {
-			return func.apply(evaluator, args);
+		public function execute(context:EvaluatorContext):* {
+			return func.apply(null, [context].concat(args));
 		}
 		
 		public function debug(evaluator:Evaluator, indent = 0):void {
 			var name = '', ind = '';
-			for each (var i in ['callMethod', 'defineVar', 'defineFunction', 'loop', 'expression', 'getVar', 'setVar'])
+			for each (var i in ['callMethod', 'defineVar', 'defineFunction', 'loop', 'expression', 'getVar', 'setVar', 'conditional'])
 				if (func == evaluator[i])
 					name = i;
 			for (var l = 0; l < indent; l++)

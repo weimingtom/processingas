@@ -6,14 +6,13 @@ package processing {
 	import processing.ArrayList;
 	import processing.Point;
 	import processing.Random;
-	import flash.utils.setInterval;
-	import flash.utils.clearInterval;
 	import flash.net.navigateToURL;
 	import flash.net.URLRequest;
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.display.Shape;
 	import flash.display.CapsStyle;
+	import flash.display.StageQuality;
 	import flash.geom.Rectangle;
 	import flash.geom.Matrix;
 
@@ -691,11 +690,13 @@ package processing {
 		public function smooth():void
 		{
 			doSmooth = true;
+			p.sprite.stage.quality = StageQuality.HIGH;
 		}
 
 		public function noSmooth():void
 		{
 			doSmooth = false;
+			p.sprite.stage.quality = StageQuality.LOW;
 		}
 		
 		public function noLoop()
