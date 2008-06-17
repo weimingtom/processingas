@@ -1,4 +1,4 @@
-package processing {
+package processing.api {
 	public class ArrayList extends Array {
 		public function ArrayList( size, size2, size3 ):void
 		{

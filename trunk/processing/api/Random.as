@@ -1,4 +1,4 @@
-package processing {
+package processing.api {
 	public class Random {
 		public var haveNextNextGaussian:Boolean = false;
 		public var nextNextGaussian:Number = 0;

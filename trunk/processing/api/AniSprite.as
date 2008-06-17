@@ -1,5 +1,5 @@
-package processing {
-	import processing.Context;
+package processing.api {
+	import processing.api.*;
 
 	public class AniSprite {
 		public var images:Array = [];

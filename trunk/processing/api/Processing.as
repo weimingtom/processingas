@@ -1,7 +1,7 @@
-﻿package processing {
+﻿package processing.api {
+	import processing.api.*;
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
-	import processing.Context;
 	import flash.events.MouseEvent;
 	import flash.events.Event;
 
