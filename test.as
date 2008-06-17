@@ -26,10 +26,9 @@ package {
 			
 			// try some parsin'
 			var evaluator:Evaluator = new Evaluator(p.context);
-//			var parser:Parser = new Parser(new Tokenizer(), evaluator);
-//			var evaluator:Evaluator = new Evaluator(p.context)
-//			parser.parse(processingText);
-//			evaluator.evaluate(parser.parse(processingText));
+			var parser:Parser = new Parser(evaluator);
+parser.parse(processingText).debug(evaluator);
+			evaluator.evaluate(parser.parse(processingText));
 			
 			// evaluate code
 //			var parser:Parser = new Parser();
@@ -39,8 +38,8 @@ package {
 //*****************************************************************************
 // All Examples Written by Casey Reas and Ben Fry
 // unless otherwise stated.
-
-evaluator.evaluate(new Block(
+/*
+var code:Block = new Block(
 	//new Statement(evaluator.defineFunction, ['setup', new Block(
 		new Statement(evaluator.callMethod, ['size', [200, 200]]),
 		new Statement(evaluator.callMethod, ['smooth']),
@@ -64,7 +63,9 @@ evaluator.evaluate(new Block(
 			)
 		])
 //	)])
-));
+);
+*/
+//evaluator.evaluate(code);
 /*
 // All Examples Written by Casey Reas and Ben Fry
 // unless otherwise stated.

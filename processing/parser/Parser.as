@@ -1,103 +1,129 @@
 package processing.parser {
-	import processing.parser.Block;
-	import processing.parser.Statement;
-	import processing.parser.Tokenizer;
-	import processing.parser.Evaluator;
+	import processing.parser.*;
 	
 	public class Parser {
 		public var tokenizer:Tokenizer;
+		public var evaluator:Evaluator;
+		public var context:ParserContext;
 	
-		public function Parser(t:Tokenizer = undefined) {
-			tokenizer = t;
+		public function Parser(e:Evaluator) {
+			// save evaluator
+			evaluator = e;
+			// create tokenizer
+			tokenizer = new Tokenizer();
 		}
 		
 		public function parse(code:String):Block {
 			// initialize tokenizer
 			tokenizer.load(code);
 			
-			// parse block
-			var block:Block = new Block();
-			while (!tokenizer.done && t.peek() != Token.RIGHT_CURLY)
-				parseStatement(block);
+			// parse script
+			var script:Block = parseBlock();
 			if (!tokenizer.done)
 				throw new TokenizerSyntaxError('Syntax error', tokenizer);
+			return script;
+		}
+		
+		private function parseBlock():Block {
+			// create new parser context
+			context = new ParserContext;
+		
+			// parse code block
+			var block:Block = new Block();
+			while (!tokenizer.done && !tokenizer.peek().match(TokenType.RIGHT_CURLY))
+				block.append(parseStatement());
+			return block;			
+		}
+
+//[TODOSOON] make statements out of literals?
+
+		private function parseStatement():Block {
+			// parse current statement line
+			var block:Block = new Block();
+			var token:Token = tokenizer.peek();
+			switch (token.type)
+			{
+			    // parse block
+			    case TokenType.LEFT_CURLY:
+				// get parsed block
+				tokenizer.get();
+				block = parseBlock();
+				tokenizer.match(TokenType.RIGHT_CURLY, true);
+				return block;
+
+			    // for statement
+			    case TokenType.FOR:
+				// match opening 'for' and '('
+				tokenizer.get();
+				tokenizer.match(TokenType.LEFT_PAREN, true);
+				
+				// match initializer
+				if (!tokenizer.match(TokenType.SEMICOLON)) {
+					// match variable definitions or expression
+					token = tokenizer.peek();
+//[TODO] handle other declaration types...
+					if (token.match(TokenType.INT) || token.match(TokenType.FLOAT))
+						block.append(parseVariables());
+					else
+						block.push(parseExpression());
+						
+					// next semicolon
+					tokenizer.match(TokenType.SEMICOLON, true);
+				}
+				
+				// match condition
+				var condition:Statement = (tokenizer.peek().match(TokenType.SEMICOLON)) ?
+				    undefined : parseExpression();
+				tokenizer.match(TokenType.SEMICOLON, true);
+				// match update
+				var update:Statement = (tokenizer.peek().match(TokenType.RIGHT_PAREN)) ?
+				    undefined : parseExpression();
+				tokenizer.match(TokenType.RIGHT_PAREN, true);
+				// parse body
+				var body:Block = parseStatement();
+				
+				// append loop body
+				if (update)
+					body.push(update);
+				block.push(new Statement(evaluator.loop, [condition || true, body]));
+				return block;
+			
+			    // empty expressions
+			    case TokenType.NEWLINE:
+			    case TokenType.SEMICOLON:
+				return undefined;
+			
+			    // variables
+//[TODO] handle classes with this
+			    case TokenType.FLOAT:
+			    case TokenType.INT:
+				block = parseVariables();
+				break;
+			
+			    // identifier
+			    case TokenType.IDENTIFIER:
+			    default:
+				block.push(parseExpression());
+				break;
+			}
+			
+			// check for proper termination
+			if (token.line == tokenizer.currentToken.line) {
+				var nextToken:Token = tokenizer.peek(true);
+				if (!nextToken.match(TokenType.END) &&
+				    !nextToken.match(TokenType.NEWLINE) &&
+				    !nextToken.match(TokenType.SEMICOLON) &&
+				    !nextToken.match(TokenType.RIGHT_CURLY))
+					throw new TokenizerSyntaxError('Missing ; before statement', tokenizer);
+			}
+			// eliminate tailing semicolon
+			tokenizer.match(TokenType.SEMICOLON);
+			
+			// return parsed statement
 			return block;
 		}
 		
-		private function parseStatement(block:Block):void {
-			// parse current statement line
-			var token:Token = tokenizer.get();
-			switch (token.type)
-			{
-			    // variables
-			    case TokenType.VAR:
-				parseVariables(block);
-				break;
-			}
-		}
-		
-		private function parseVariables(block:Block):void {
-			do {
-				// add definitions
-				tokenizer.match(TokenType.IDENTIFIER, true);
-				var definition = tokenizer.get();
-				block.push(new Statement('defineVar', [
-				
-				t.mustMatch(Token.IDENTIFIER);
-				var n2 = new Node(t);
-				n2.name = n2.value;
-				if (t.match(Token.ASSIGN)) {
-					if (t.token.assignOp)
-						throw t.newSyntaxError("Invalid variable initialization");
-					n2.initializer = Expression(t, x, Token.COMMA);
-				}
-				n2.readOnly = (n.type == Token.CONST);
-				n.push(n2);
-				x.varDecls.push(n2);
-			} while (t.match(Token.COMMA));
-			return n;
-		}
-	
-	
-	/*
-		public static function Script(t, x) {
-			var n:Node = Statements(t, x);
-			n.type = Token.SCRIPT;
-			n.funDecls = x.funDecls;
-			n.varDecls = x.varDecls;
-			return n;
-		}
-
-		public static function tokenstr(tt) {
-			return Token.getConstant(tt);
-		}
-
-		// Statement stack and nested statement handler.
-		public static function nest(t, x, node, func, end = null) {
-			x.stmtStack.push(node);
-			var n = func(t, x);
-			x.stmtStack.pop();
-			end && t.mustMatch(end);
-			return n;
-		}
-
-		public static function Statements(t, x) {
-			var n = new Node(t, Token.BLOCK);
-			x.stmtStack.push(n);
-			while (!t.done && t.peek() != Token.RIGHT_CURLY)
-				n.push(Statement(t, x));
-			x.stmtStack.pop();
-			return n;
-		}
-
-		public static function Block(t, x) {
-			t.mustMatch(Token.LEFT_CURLY);
-			var n = Statements(t, x);
-			t.mustMatch(Token.RIGHT_CURLY);
-			return n;
-		}
-
-		public static function Statement(t, x) {
+/*		public static function Statement(t, x) {
 			var i, label, n, n2, ss, tt = t.get();
 
 			// Cases for statements ending in a right curly return early, avoiding the
@@ -332,39 +358,35 @@ package processing.parser {
 			}
 			t.match(Token.SEMICOLON);
 			return n;
+		}*/
+		
+		private function parseVariables():Block {
+			// get variable type
+			var block:Block = new Block();
+			var varType:TokenType = tokenizer.get().type;
+			do {
+				// add definitions
+				tokenizer.match(TokenType.IDENTIFIER, true);
+				var varName:String = tokenizer.currentToken.value;
+				block.push(new Statement(evaluator.defineVar, [varName, varType]));
+				
+				// check for assignment operation
+				if (tokenizer.match(TokenType.ASSIGN))
+				{
+					// prevent assignment operators
+					if (tokenizer.currentToken.assignOp)
+						throw new TokenizerSyntaxError('Invalid variable initialization', tokenizer);
+
+					// get initializer statement
+					block.push(new Statement(evaluator.setVar, [varName, parseExpression(TokenType.COMMA)]));
+				}
+			} while (tokenizer.match(TokenType.COMMA));
+			
+			// return variable definition
+			return block;
 		}
-
-		public static function FunctionDefinition(t, x, requireName, functionForm) {
-			var f:Node = new Node(t);
-			if (t.match(Token.IDENTIFIER))
-				f.name = t.token.value;
-			else if (requireName)
-				throw t.newSyntaxError("Missing function identifier");
-
-			t.mustMatch(Token.LEFT_PAREN);
-			f.params = [];
-			var tt;
-			while ((tt = t.get()) != Token.RIGHT_PAREN) {
-				if (tt != Token.IDENTIFIER)
-					throw t.newSyntaxError("Missing formal parameter");
-				f.params.push(t.token.value);
-				if (t.peek() != Token.RIGHT_PAREN)
-					t.mustMatch(Token.COMMA);
-			}
-
-			t.mustMatch(Token.LEFT_CURLY);
-			var x2 = new CompilerContext(true);
-			f.body = Script(t, x2);
-			t.mustMatch(Token.RIGHT_CURLY);
-			f.end = t.token.end;
-
-			f.functionForm = functionForm;
-			if (functionForm == Token.FUNCTION_DECLARED_FORM)
-				x.funDecls.push(f);
-			return f;
-		}
-
-		public static function Variables(t, x) {
+		
+/*		public static function Variables(t, x) {
 			var n = new Node(t);
 			do {
 				t.mustMatch(Token.IDENTIFIER);
@@ -380,15 +402,294 @@ package processing.parser {
 				x.varDecls.push(n2);
 			} while (t.match(Token.COMMA));
 			return n;
+		}*/
+		
+		private function parseList(start:TokenType, stop:TokenType):Array {
+			// match opening
+			tokenizer.match(start, true);
+			// parse a list (array initializer, function call, &c.)
+			var list:Array = [];
+			while (!tokenizer.peek().match(stop)) {
+				// parse empty entries
+				if (tokenizer.match(TokenType.COMMA)) {
+					list.push(null);
+					continue;
+				}
+				// parse arguments up to next comma
+				list.push(parseExpression(TokenType.COMMA));
+				if (!tokenizer.match(TokenType.COMMA))
+					break;
+			}
+			// match closing
+			tokenizer.match(stop, true);
+			return list;
+		}
+		
+		private function parseExpression(stopAt:TokenType = undefined):* {
+			// variable definitions
+			var operators:Array = [], operands:Array = [], token:Token;
+//[TODO] should this use a parser context?
+			var bracketLevel:int = 0, curlyLevel:int = 0, parenLevel:int = 0, hookLevel:int = 0;
+		
+			// main loop
+			parseLoop: for (; !tokenizer.done || tokenizer.peek().type != TokenType.SEMICOLON; tokenizer.get()) {
+				// get next token
+				token = tokenizer.peek();
+//trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
+
+				// stop if token matches stop parameter (on original bracket level)
+				if (stopAt && token.match(stopAt) && !bracketLevel && !curlyLevel && !parenLevel && !hookLevel)
+					break parseLoop;
+				
+				switch (token.type) {
+				    // semicolon
+				    case TokenType.SEMICOLON:
+					// this shouldn't happen; Statement handles this
+					break parseLoop;
+				
+				    // operators
+				    case TokenType.OR:
+				    case TokenType.AND:
+				    case TokenType.BITWISE_OR:
+				    case TokenType.BITWISE_XOR:
+				    case TokenType.BITWISE_AND:
+				    case TokenType.EQ:
+				    case TokenType.NE:
+				    case TokenType.STRICT_EQ:
+				    case TokenType.STRICT_NE:
+				    case TokenType.LT:
+				    case TokenType.LE:
+				    case TokenType.GE:
+				    case TokenType.GT:
+				    case TokenType.INSTANCEOF:
+				    case TokenType.LSH:
+				    case TokenType.RSH:
+				    case TokenType.URSH:
+				    case TokenType.PLUS:
+				    case TokenType.MINUS:
+				    case TokenType.MUL:
+				    case TokenType.DIV:
+				    case TokenType.MOD:
+				    case TokenType.DOT:
+					// ensure that we be looking for an operator
+					if (tokenizer.scanOperand)
+						break parseLoop;
+				
+					// combine any higher-precedence expressions
+					while (operators.length &&
+					    operators[operators.length - 1].type.precedence >= token.type.precedence)
+						reduceExpression(operators, operands);
+
+//					if (tt == Token.DOT) {
+//						t.mustMatch(Token.IDENTIFIER);
+//						operands.push(new Node(t, Token.DOT, operands.pop(), new Node(t)));
+//					} else {
+						// push operator and scan for operands
+						operators.push(token.type);
+						tokenizer.scanOperand = true;
+//					}
+					break;
+					
+				    case TokenType.INCREMENT:
+				    case TokenType.DECREMENT:
+					// check placement
+					if (tokenizer.scanOperand)
+					{
+						// prefix; add operator
+						operators.push(token.type);
+					}
+					else
+					{
+						// postfix; reduce higher-precedence operators (using > and not >=, so postfix > prefix)
+						while (operators.length &&
+						    operators[operators.length - 1].type.precedence > token.type.precedence)
+							reduceExpression(operators, operands);
+							
+						// add operator and reduce immediately
+//[TODO] is reducing immediately necessary? a matter of precedence...
+						operators.push(token.type);
+						reduceExpression(operators, operands);
+					}
+					break;
+
+				    // operands
+				    case TokenType.IDENTIFIER:
+				    case TokenType.NULL:
+				    case TokenType.THIS:
+				    case TokenType.TRUE:
+				    case TokenType.FALSE:
+				    case TokenType.NUMBER:
+				    case TokenType.STRING:
+				    case TokenType.REGEXP:
+					// only add if scanning operands
+					if (!tokenizer.scanOperand)
+						break parseLoop;
+					operands.push(token);
+//[TODO] convertToken here? (no; variable assignment prohibits this, unless identifiers become Reference objects?)
+					tokenizer.scanOperand = false;
+					break;
+					
+				    case TokenType.LEFT_PAREN:
+//[TODO] correct this
+//					if (t.scanOperand) {
+//						operators.push(TokenType.GROUP);
+//						parenLevel++;
+//					} else {
+						// reduce until we get the current function (or lower operator precedence than 'new')
+//						while (operators.length &&
+//						    operators[operators.length - 1].type.precedence > TokenType.NEW.precedence)
+//							reduce();
+//[TODO] uncomment for 'new' operator
+//						n = operators[operators.length-1];
+						// parse arguments (scanning operands to match regexp and unary +/-)
+						tokenizer.scanOperand = true;
+						operands.push(parseList(TokenType.LEFT_PAREN, TokenType.RIGHT_PAREN));
+						tokenizer.scanOperand = false;
+//						if (tokenizer.match(TokenType.RIGHT_PAREN)) {
+//							if (n && n.type == TokenType.NEW) {
+//								--operators.length;
+//								n.push(operands.pop());
+//								operands.push(n);
+//							} else {
+//								operands.push(TokenType.LIST);
+//							}
+//							tokenizer.scanOperand = false;
+//							break;
+//						}
+//						if (n && n.type == TokenType.NEW)
+//							n.type = TokenType.NEW_WITH_ARGS;
+//						else
+							operators.push(TokenType.CALL);
+//					}
+					break;
+
+				    case TokenType.RIGHT_PAREN:
+//[TODO] correct this
+					// check if we're closing a parenthetical
+					if (tokenizer.scanOperand || !parenLevel)
+						break parseLoop;
+
+//[TODO] uncomment for groups		// reduce until the current operator is found
+//					var op:TokenType = operators[operators.length - 1];
+//					while (op != TokenType.GROUP) {
+//						reduceExpression(operators, operands);
+//						op = operators[operators.length - 1];
+//					}
+//					parenLevel--;
+					break;
+					
+				    // Automatic semicolon insertion means we may scan across a newline
+				    // and into the beginning of another statement.  If so, break out of
+				    // the while loop and let tokenizer.scanOperand logic handle errors.
+//[TODO] no automatic semicolon insertion!
+				    default:
+					break parseLoop;
+				}			
+			}
+			
+			// check that we are on the correct level...
+			if (bracketLevel)
+				throw new TokenizerSyntaxError('Missing ] in index expression', tokenizer);
+			if (hookLevel)
+				throw new TokenizerSyntaxError('Missing : after ?', tokenizer);
+			if (parenLevel)
+				throw new TokenizerSyntaxError('Missing ) in parenthetical', tokenizer);
+//[TODO] curlyLevel!?
+			// ...and are not missing an operand
+			if (tokenizer.scanOperand)
+				throw new TokenizerSyntaxError('Missing operand', tokenizer);
+				
+			// Resume default mode, scanning for operands, not operators.
+			tokenizer.scanOperand = true;
+			while (operators.length)
+				reduceExpression(operators, operands);
+			return convertOperand(operands.pop());
 		}
 
-		public static function ParenExpression(t, x) {
-			t.mustMatch(Token.LEFT_PAREN);
-			var n = Expression(t, x);
-			t.mustMatch(Token.RIGHT_PAREN);
-			return n;
+//[TODO] move this inside former function?
+		private function reduceExpression(operatorList:Array, operandList:Array):void {
+			// extract operator and operands
+			var operator:TokenType = operatorList.pop();
+			var operands:Array = operandList.splice(operandList.length - operator.arity);
+			
+			// convert expression to Statements
+			switch (operator) {
+			    // function call
+			    case TokenType.CALL:
+				// convert operands to Statements
+				operandList.push(new Statement(evaluator.callMethod,
+				    [convertOperand(operands[0]), operands[1]]));
+				break;
+				
+			    // increment/decrement
+			    case TokenType.INCREMENT:
+			    case TokenType.DECREMENT:
+				// create expressions
+				var getExpression:Statement = new Statement(evaluator.getVar, [operands[0].value]);
+				var changeExpression:Statement = new Statement(evaluator.expression, [getExpression, 1,
+				    operator == TokenType.INCREMENT ? TokenType.PLUS : TokenType.MINUS]);
+			        operandList.push(new Statement(evaluator.setVar, [operands[0].value, changeExpression]));
+				break;
+
+			    // operators
+			    case TokenType.OR:
+			    case TokenType.AND:
+			    case TokenType.BITWISE_OR:
+			    case TokenType.BITWISE_XOR:
+			    case TokenType.BITWISE_AND:
+			    case TokenType.EQ:
+			    case TokenType.NE:
+			    case TokenType.STRICT_EQ:
+			    case TokenType.STRICT_NE:
+			    case TokenType.LT:
+			    case TokenType.LE:
+			    case TokenType.GE:
+			    case TokenType.GT:
+			    case TokenType.INSTANCEOF:
+			    case TokenType.LSH:
+			    case TokenType.RSH:
+			    case TokenType.URSH:
+			    case TokenType.PLUS:
+			    case TokenType.MINUS:
+			    case TokenType.MUL:
+			    case TokenType.DIV:
+			    case TokenType.MOD:
+			    case TokenType.DOT:
+				operandList.push(new Statement(evaluator.expression,
+				    [convertOperand(operands[0]), convertOperand(operands[1]), operator]));
+				break;
+			
+			    default:
+				throw new Error('Unknown operator "' + operator.type + '"');
+			}
+		}
+		
+		private function convertOperand(operand:*):* {
+			// convert tokens to statement
+			if (operand is Token) {
+				switch (operand.type) {
+				    case TokenType.NULL:
+				    case TokenType.TRUE:
+				    case TokenType.FALSE:
+				    case TokenType.NUMBER:
+				    case TokenType.STRING:
+				    case TokenType.REGEXP:
+					return operand.value;
+				    
+				    case TokenType.IDENTIFIER:
+				    case TokenType.THIS:
+					return new Statement(evaluator.getVar, [operand.value]);
+				
+				    default:
+					throw new Error('Could not convert operand of type "' + operand.type + '"');
+				}
+			}
+			
+			// otherwise, return operand
+			return operand;
 		}
 			
+/*
 		public static function Expression(t, x, stop = null) {
 			var n, id, tt, operators = [], operands = [];
 			var bl = x.bracketLevel, cl = x.curlyLevel, pl = x.parenLevel,
@@ -683,6 +984,82 @@ package processing.parser {
 				reduce();
 			return operands.pop();
 		}
+
+		public static function Script(t, x) {
+			var n:Node = Statements(t, x);
+			n.type = Token.SCRIPT;
+			n.funDecls = x.funDecls;
+			n.varDecls = x.varDecls;
+			return n;
+		}
+
+		public static function tokenstr(tt) {
+			return Token.getConstant(tt);
+		}
+
+		// Statement stack and nested statement handler.
+		public static function nest(t, x, node, func, end = null) {
+			x.stmtStack.push(node);
+			var n = func(t, x);
+			x.stmtStack.pop();
+			end && t.mustMatch(end);
+			return n;
+		}
+
+		public static function Statements(t, x) {
+			var n = new Node(t, Token.BLOCK);
+			x.stmtStack.push(n);
+			while (!t.done && t.peek() != Token.RIGHT_CURLY)
+				n.push(Statement(t, x));
+			x.stmtStack.pop();
+			return n;
+		}
+
+		public static function Block(t, x) {
+			t.mustMatch(Token.LEFT_CURLY);
+			var n = Statements(t, x);
+			t.mustMatch(Token.RIGHT_CURLY);
+			return n;
+		}
+
+		public static function FunctionDefinition(t, x, requireName, functionForm) {
+			var f:Node = new Node(t);
+			if (t.match(Token.IDENTIFIER))
+				f.name = t.token.value;
+			else if (requireName)
+				throw t.newSyntaxError("Missing function identifier");
+
+			t.mustMatch(Token.LEFT_PAREN);
+			f.params = [];
+			var tt;
+			while ((tt = t.get()) != Token.RIGHT_PAREN) {
+				if (tt != Token.IDENTIFIER)
+					throw t.newSyntaxError("Missing formal parameter");
+				f.params.push(t.token.value);
+				if (t.peek() != Token.RIGHT_PAREN)
+					t.mustMatch(Token.COMMA);
+			}
+
+			t.mustMatch(Token.LEFT_CURLY);
+			var x2 = new CompilerContext(true);
+			f.body = Script(t, x2);
+			t.mustMatch(Token.RIGHT_CURLY);
+			f.end = t.token.end;
+
+			f.functionForm = functionForm;
+			if (functionForm == Token.FUNCTION_DECLARED_FORM)
+				x.funDecls.push(f);
+			return f;
+		}
+
+		public static function ParenExpression(t, x) {
+			t.mustMatch(Token.LEFT_PAREN);
+			var n = Expression(t, x);
+			t.mustMatch(Token.RIGHT_PAREN);
+			return n;
+		}
+			
+
 
 		public static function parse(s, f = '', l = 0) {
 			var t = new Tokenizer(s, f, l);
