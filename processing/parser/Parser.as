@@ -111,9 +111,15 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 			    case TokenType.NEWLINE:
 			    case TokenType.SEMICOLON:
 				return undefined;
+				
+			    // class definitions
+			    case TokenType.CLASS:
+				// get class definition
+				block.push(parseClass());
+				return block;
 			
 			    // definitions
-//[TODO] handle classes with this
+			    case TokenType.IDENTIFIER:
 			    case TokenType.VOID:
 			    case TokenType.FLOAT:
 			    case TokenType.INT:
@@ -121,14 +127,15 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 					// get parsed function
 					block.push(parseFunction());
 					return block;
+				} else if (!token.match(TokenType.IDENTIFIER) ||
+				    tokenizer.peek(false, 2).match(TokenType.IDENTIFIER)) {
+					// get variable list
+					block = parseVariables();
+					break;
 				}
-
-				// get variable list
-				block = parseVariables();
-				break;
+				// fall-through
 			
-			    // identifier
-			    case TokenType.IDENTIFIER:
+			    // expression
 			    default:
 				block.push(parseExpression());
 				break;
@@ -389,9 +396,11 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 		
 		private function parseFunction():Statement {
 			// get function type
-			if (!tokenizer.match(TokenType.VOID) && !tokenizer.match(TokenType.INT) && !tokenizer.match(TokenType.FLOAT))
-				throw new TokenizerSyntaxError('Invalid function definition type', tokenizer);
-			var funcType:TokenType = tokenizer.currentToken.type;
+			var funcType:TokenType =
+			    tokenizer.match(TokenType.INT) ? TokenType.INT :
+			    tokenizer.match(TokenType.FLOAT) ? TokenType.FLOAT :
+			    tokenizer.match(TokenType.VOID) ? TokenType.VOID :
+			    TokenType.CONSTRUCTOR;
 			// get function name
 			tokenizer.match(TokenType.IDENTIFIER, true);
 			var funcName:String = tokenizer.currentToken.value;
@@ -429,10 +438,70 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 			return new Statement(evaluator.defineFunction, [funcName, funcType, params, body]);
 		}
 		
+		private function parseClass():Statement {
+			// get class name
+			tokenizer.match(TokenType.CLASS, true);
+			tokenizer.match(TokenType.IDENTIFIER, true);
+			var className:String = tokenizer.currentToken.value;
+			
+			// parse body
+			var constructor:Statement = null, publicBody:Block = new Block(), privateBody:Block = new Block();
+			tokenizer.match(TokenType.LEFT_CURLY, true);
+			while (!tokenizer.peek().match(TokenType.RIGHT_CURLY))
+			{
+				// get visibility (default public)
+				var block:Block = publicBody;
+				tokenizer.match(TokenType.PUBLIC);
+				if (tokenizer.match(TokenType.PRIVATE))
+				        block = privateBody;
+				
+				// get next token
+				var token:Token = tokenizer.peek();
+				switch (token.type) {
+				    // variable or function
+				    case TokenType.VOID:
+				    case TokenType.FLOAT:
+				    case TokenType.INT:
+					if (tokenizer.peek(false, 3).match(TokenType.LEFT_PAREN))
+					{
+						// get parsed function
+						block.push(parseFunction());
+					}
+					else
+					{
+						// get variable list
+						block.append(parseVariables());
+						// check for tailing semicolon
+						tokenizer.match(TokenType.SEMICOLON);
+					}
+					break;
+				
+				    // constructor needs no return type
+				    case TokenType.IDENTIFIER:
+					if (token.value == className && !constructor)
+					{
+						// get parsed constructor 
+						constructor = parseFunction();
+						break;
+					}
+					// invalid definition; fall-through
+				    
+				    default:
+					throw new TokenizerSyntaxError('Invalid initializer in class "' + className + '"', tokenizer);
+				}
+			}
+			tokenizer.match(TokenType.RIGHT_CURLY, true);
+			
+			// return function declaration statement
+			return new Statement(evaluator.defineClass, [className, constructor, publicBody, privateBody]);
+		}
+		
 		private function parseVariables():Block {
 			// get variable type
+			var varType = tokenizer.get().match(TokenType.IDENTIFIER) ?
+			    tokenizer.currentToken.value : tokenizer.currentToken.type;
+			// get variable list
 			var block:Block = new Block();
-			var varType:TokenType = tokenizer.get().type;
 			do {
 				// add definitions
 				tokenizer.match(TokenType.IDENTIFIER, true);
@@ -503,7 +572,7 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 			// main loop
 			parseLoop: while (!tokenizer.done || tokenizer.peek().type != TokenType.SEMICOLON) {
 				// get next token
-//[TODO] should i be peeking or getting?
+//[TODO] should we be peeking or getting?
 				token = tokenizer.peek();
 trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 
@@ -576,16 +645,34 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 					    operators[operators.length - 1].precedence >= token.type.precedence)
 						reduceExpression(operators, operands);
 
-//					if (tt == Token.DOT) {
-//						t.mustMatch(Token.IDENTIFIER);
-//						operands.push(new Node(t, Token.DOT, operands.pop(), new Node(t)));
-//					} else {
-						// push operator and scan for operands
-						operators.push(token.type);
-						tokenizer.scanOperand = true;
-//					}
+					// identifier must follow dot operator
+					if (token.match(TokenType.DOT) && !tokenizer.peek().match(TokenType.IDENTIFIER))
+						throw new TokenizerSyntaxError('Identifier must follow \'.\' operator', tokenizer);
+
+					// push operator and scan for operands
+					operators.push(token.type);
+					tokenizer.scanOperand = true;
 					break;
+				
+				    // keywords
+//[TODO] which of these are used in processing?
+				    case TokenType.DELETE:
+				    case TokenType.TYPEOF:
+				    case TokenType.NOT:
+				    case TokenType.BITWISE_NOT:
+				    case TokenType.UNARY_PLUS:
+				    case TokenType.UNARY_MINUS:
+				    case TokenType.NEW:
+					// ensure that we be looking for an operator
+					if (!tokenizer.scanOperand)
+						break parseLoop;
+					tokenizer.get();
 					
+					// add operator
+					operators.push(token.type);
+					break;
+				
+				    // increment/decrement
 				    case TokenType.INCREMENT:
 				    case TokenType.DECREMENT:
 					tokenizer.get();
@@ -622,14 +709,14 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 					if (!tokenizer.scanOperand)
 						break parseLoop;
 					tokenizer.get();
+
+					// push literal
 					operands.push(token);
 //[TODO] convertToken here? (no; variable assignment prohibits this, unless identifiers become Reference objects?)
 					tokenizer.scanOperand = false;
-trace(token.value);
 					break;
 					
 				    case TokenType.LEFT_PAREN:
-//[TODO] correct this
 					if (tokenizer.scanOperand) {
 						// begin parenthetical
 						tokenizer.get();
@@ -637,43 +724,33 @@ trace(token.value);
 						parenLevel++;
 					} else {
 						// reduce until we get the current function (or lower operator precedence than 'new')
-//						while (operators.length &&
-//						    operators[operators.length - 1].precedence > TokenType.NEW.precedence)
-//							reduce();
-//[TODO] uncomment for 'new' operator
-//						n = operators[operators.length-1];
+						while (operators.length &&
+						    operators[operators.length - 1].precedence > TokenType.NEW.precedence)
+							reduceExpression(operators, operands);
+
 						// parse arguments (scanning operands to match regexp and unary +/-)
 						tokenizer.scanOperand = true;
 						operands.push(parseList(TokenType.LEFT_PAREN, TokenType.RIGHT_PAREN));
 						tokenizer.scanOperand = false;
-//						if (tokenizer.match(TokenType.RIGHT_PAREN)) {
-//							if (n && n.type == TokenType.NEW) {
-//								--operators.length;
-//								n.push(operands.pop());
-//								operands.push(n);
-//							} else {
-//								operands.push(TokenType.LIST);
-//							}
-//							tokenizer.scanOperand = false;
-//							break;
-//						}
-//						if (n && n.type == TokenType.NEW)
-//							n.type = TokenType.NEW_WITH_ARGS;
-//						else
+
+						// designate call operator, or that 'new' has args
+						if (!operators.length || operators[operators.length - 1] != TokenType.NEW)
 							operators.push(TokenType.CALL);
-						// reduce now because CALL has no precedence
+						else if (operators[operators.length - 1] == TokenType.NEW)
+							operators.splice(-1, 1, TokenType.NEW_WITH_ARGS);
+							
+						// reduce now because CALL/NEW has no precedence
 						reduceExpression(operators, operands);
 					}
 					break;
 
 				    case TokenType.RIGHT_PAREN:
-//[TODO] correct this
 					// check if we're closing a parenthetical
 					if (tokenizer.scanOperand || !parenLevel)
 						break parseLoop;
 					tokenizer.get();
 
-//[TODO] uncomment for groups		// reduce until closing parenthetical is found
+					// reduce until closing parenthetical is found
 					while (operators[operators.length - 1] != TokenType.GROUP)
 						reduceExpression(operators, operands);
 					// remove group token
@@ -717,11 +794,16 @@ trace(token.value);
 			
 			// convert expression to Statements
 			switch (operator) {
-			    // function call
+			    // function call/class constructor
+			    case TokenType.NEW:
+				// add dummy list and fall through
+				operands.push([]);
+			    case TokenType.NEW_WITH_ARGS:
 			    case TokenType.CALL:
-				// convert operands to Statements
-				operandList.push(new Statement(evaluator.callMethod,
-				    [convertOperand(operands[0]), operands[1]]));
+				operandList.push(new Statement(
+				    operator == TokenType.CALL ? evaluator.callMethod : evaluator.createInstance,
+				    [convertOperand(operands[0]), operands[1]]
+				));
 				break;
 				
 			    // increment/decrement
@@ -738,6 +820,13 @@ trace(token.value);
 				operandList.push(new Statement(evaluator.setVar,
 				    [operands[0].value, convertOperand(operands[1])]));
 				break;
+				
+			    // dot operator
+//[TODO] could this be folded in with operators?
+			    case TokenType.DOT:
+				operandList.push(new Statement(evaluator.useScope,
+				    [convertOperand(operands[0]), convertOperand(operands[1])]));
+			        break;
 
 			    // operators
 			    case TokenType.OR:
@@ -762,7 +851,6 @@ trace(token.value);
 			    case TokenType.MUL:
 			    case TokenType.DIV:
 			    case TokenType.MOD:
-			    case TokenType.DOT:
 				operandList.push(new Statement(evaluator.expression,
 				    [convertOperand(operands[0]), convertOperand(operands[1]), operator]));
 				break;
