@@ -522,7 +522,7 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 						throw new TokenizerSyntaxError('Invalid variable initialization', tokenizer);
 
 					// get initializer statement
-					block.push(new VariableSet(varName, parseExpression(TokenType.COMMA)));
+					block.push(new Assignment(new Reference(varName), parseExpression(TokenType.COMMA)));
 				}
 			} while (tokenizer.match(TokenType.COMMA));
 			
@@ -568,7 +568,8 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 			tokenizer.match(stop, true);
 			return list;
 		}
-		
+
+//[TODO] divide this into scanOperand and scanOperator functions?
 		private function parseExpression(stopAt:TokenType = undefined):* {
 			// variable definitions
 			var operators:Array = [], operands:Array = [], token:Token;
@@ -616,6 +617,25 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 					// scan for next operand
 					tokenizer.scanOperand = true;
 					break;
+					
+				    // dot operator
+				    case TokenType.DOT:
+					// ensure that we be looking for an operator
+					if (tokenizer.scanOperand)
+						break parseLoop;
+					tokenizer.get();
+				
+					// combine any higher-precedence expressions
+					while (operators.length &&
+					    operators[operators.length - 1].precedence >= token.type.precedence)
+						reduceExpression(operators, operands);
+					
+					// push operator
+					operators.push(token.type);
+					// match and push required identifier as string
+					tokenizer.match(TokenType.IDENTIFIER, true);
+					operands.push(tokenizer.currentToken.value);
+					break;
 				
 				    // operators
 				    case TokenType.OR:
@@ -640,7 +660,6 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 				    case TokenType.MUL:
 				    case TokenType.DIV:
 				    case TokenType.MOD:
-				    case TokenType.DOT:
 					// ensure that we be looking for an operator
 					if (tokenizer.scanOperand)
 						break parseLoop;
@@ -651,21 +670,9 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 					    operators[operators.length - 1].precedence >= token.type.precedence)
 						reduceExpression(operators, operands);
 
-					// check operator type
-//[TODO] note that if identifier handling be changed, so will this
-					if (token.match(TokenType.DOT)) {
-						// match following identifier
-						tokenizer.match(TokenType.IDENTIFIER, true);
-						operands.push(tokenizer.currentToken.value);
-						operators.push(TokenType.DOT);
-						
-						// already matched operand, no need to scan
-						tokenizer.scanOperand = false;
-					} else {
-						// push operator and scan for next operand
-						operators.push(token.type);
-						tokenizer.scanOperand = true;
-					}
+					// push operator and scan for operand
+					operators.push(token.type);
+					tokenizer.scanOperand = true;
 					break;
 				
 				    // keywords
@@ -709,11 +716,22 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 						reduceExpression(operators, operands);
 					}
 					break;
+					
+				    // identifiers
+				    case TokenType.IDENTIFIER:
+//[TODO]			    case TokenType.THIS:
+					// only add if scanning operands
+					if (!tokenizer.scanOperand)
+						break parseLoop;
+					tokenizer.get();
+
+					// push reference
+					operands.push(new Reference(token.value));
+					tokenizer.scanOperand = false;
+					break;
 
 				    // operands
-				    case TokenType.IDENTIFIER:
 				    case TokenType.NULL:
-				    case TokenType.THIS:
 				    case TokenType.TRUE:
 				    case TokenType.FALSE:
 				    case TokenType.NUMBER:
@@ -725,8 +743,7 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 					tokenizer.get();
 
 					// push literal
-					operands.push(token);
-//[TODO] convertToken here? (no; variable assignment prohibits this, unless identifiers become Reference objects?)
+					operands.push(token.value);
 					tokenizer.scanOperand = false;
 					break;
 					
@@ -850,7 +867,7 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 			tokenizer.scanOperand = true;
 			while (operators.length)
 				reduceExpression(operators, operands);
-			return convertOperand(operands.pop());
+			return operands.pop();
 		}
 
 //[TODO] move this inside former function?
@@ -867,30 +884,34 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 				operands.push([]);
 				// fall-through
 			    case TokenType.NEW_WITH_ARGS:
-				operandList.push(new ObjectInstantiation(convertOperand(operands[0]), operands[1]));
+				operandList.push(new ObjectInstantiation(operands[0], operands[1]));
 				break;
 			    
 			    // function call
 			    case TokenType.CALL:
-				operandList.push(new Call(convertOperand(operands[0]), operands[1]));
+				operandList.push(new Call(operands[0], operands[1]));
 				break;
 				
 			    // increment/decrement
 			    case TokenType.INCREMENT:
 			    case TokenType.DECREMENT:
 				// expand expression
-				var getExpression:VariableGet = new VariableGet(operands[0].value);
-				var changeExpression:Operation = new Operation(getExpression, 1,
+				var changeExpression:Operation = new Operation(operands[0], 1,
 				    operator == TokenType.INCREMENT ? TokenType.PLUS : TokenType.MINUS);
-			        operandList.push(new VariableSet(operands[0].value, changeExpression));
+			        operandList.push(new Assignment(operands[0], changeExpression));
 				break;
 				
 			    // assignment
 			    case TokenType.ASSIGN:
-//[TODO] ugh wtf if left side is array this won't work...
-				operandList.push(new VariableSet(operands[0].value, convertOperand(operands[1])));
+				operandList.push(new Assignment(operands[0], operands[1]));
 				break;
 				
+			    // dot operator
+			    case TokenType.DOT:
+				operandList.push(new Reference(operands[1], operands[0]));
+			        break;
+
+//[TODO] what about one-sided operands?
 			    // unary operators
 			    case TokenType.UNARY_PLUS:
 			    case TokenType.UNARY_MINUS:
@@ -921,40 +942,13 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 			    case TokenType.MUL:
 			    case TokenType.DIV:
 			    case TokenType.MOD:
-			    case TokenType.DOT:
-				operandList.push(new Operation(convertOperand(operands[0]), convertOperand(operands[1]), operator));
+				operandList.push(new Operation(operands[0], operands[1], operator));
 				break;
 			
 			    default:
 				throw new Error('Unknown operator "' + operator + '"');
 			}
 		}
-		
-		private function convertOperand(operand:*):* {
-			// convert tokens to statement
-			if (operand is Token) {
-				switch (operand.type) {
-				    case TokenType.NULL:
-				    case TokenType.TRUE:
-				    case TokenType.FALSE:
-				    case TokenType.NUMBER:
-				    case TokenType.STRING:
-				    case TokenType.REGEXP:
-					return operand.value;
-				    
-				    case TokenType.IDENTIFIER:
-				    case TokenType.THIS:
-					return new VariableGet(operand.value);
-				
-				    default:
-					throw new Error('Could not convert operand of type "' + operand.type + '"');
-				}
-			}
-			
-			// otherwise, return operand
-			return operand;
-		}
-			
 /*
 		public static function Expression(t, x, stop = null) {
 			var n, id, tt, operators = [], operands = [];
