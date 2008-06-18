@@ -563,7 +563,7 @@ package processing.api {
 		
 		}
 
-//[TODO] see effects order has on these!
+//[TODO] see effects order has on matrix!
 		public function translate( x:Number, y:Number ):void
 		{
 			shapeMatrix.translate(x, y);

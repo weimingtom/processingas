@@ -2,9 +2,11 @@ package {
 	import flash.display.Sprite;
 	import processing.api.*;
 	import processing.parser.*;
+	import processing.parser.statements.IExecutable;
 	import mx.core.ByteArrayAsset;
 	import flash.utils.ByteArray;
 	import flash.external.ExternalInterface;
+	import mx.utils.ObjectUtil;
 	
 	[SWF(width="200", height="200", frameRate="60", backgroundColor="#ffffff")]
 	
@@ -21,17 +23,18 @@ package {
 			// create processing object
 			var p:Processing = new Processing();
 			addChild(p.sprite);
+
+			// debug parsing
+//			var parser:Parser = new Parser();
+//			var code:IExecutable = parser.parse(processingText);
+//			trace(ObjectUtil.toString(code));
 			
 			// initialize parser objects
 			var evaluator:Evaluator = new Evaluator();
 			var context:EvaluatorContext = new EvaluatorContext(p.context);
-			var parser:Parser = new Parser(evaluator);
-			
-			// debug parsing
-//			parser.parse(processingText).debug(evaluator);
 
 			// evaluate code
-			evaluator.evaluate(parser.parse(processingText), context);
+			evaluator.evaluate(processingText, context);
 			// start the Processing API
 			p.start();
 		}
