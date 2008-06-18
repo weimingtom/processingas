@@ -511,8 +511,11 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 				// add definitions
 				tokenizer.match(TokenType.IDENTIFIER, true);
 				var varName:String = tokenizer.currentToken.value;
+				// check for per-variable array brackets
+				var varIsArray = (tokenizer.match(TokenType.LEFT_BRACKET) &&
+				    tokenizer.match(TokenType.RIGHT_BRACKET, true)) || isArray;
 				// add definition
-				block.push(new VariableDefinition(varName, varType, isArray));
+				block.push(new VariableDefinition(varName, varType, varIsArray));
 				
 				// check for assignment operation
 				if (tokenizer.match(TokenType.ASSIGN))
