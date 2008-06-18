@@ -649,16 +649,20 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 					    operators[operators.length - 1].precedence >= token.type.precedence)
 						reduceExpression(operators, operands);
 
-					// push operator and scan for operands
-					operators.push(token.type);
-					tokenizer.scanOperand = true;
-					
-					// convert identifier following dot
+					// check operator type
 //[TODO] note that if identifier handling be changed, so will this
 					if (token.match(TokenType.DOT)) {
+						// match following identifier
 						tokenizer.match(TokenType.IDENTIFIER, true);
 						operands.push(tokenizer.currentToken.value);
+						operators.push(TokenType.DOT);
+						
+						// already matched operand, no need to scan
 						tokenizer.scanOperand = false;
+					} else {
+						// push operator and scan for next operand
+						operators.push(token.type);
+						tokenizer.scanOperand = true;
 					}
 					break;
 				
@@ -723,6 +727,35 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 //[TODO] convertToken here? (no; variable assignment prohibits this, unless identifiers become Reference objects?)
 					tokenizer.scanOperand = false;
 					break;
+				
+				    // brackets
+				    case TokenType.LEFT_BRACKET:
+					// only add if not scanning operands
+					if (tokenizer.scanOperand)
+						break parseLoop;
+					tokenizer.get();
+					
+					// property indexing operator.
+					operators.push(TokenType.INDEX);
+					tokenizer.scanOperand = true;
+					bracketLevel++;
+					break;
+
+				    case TokenType.RIGHT_BRACKET:
+					// only add if not scanning operands
+					if (tokenizer.scanOperand || !bracketLevel)
+						break parseLoop;
+					tokenizer.get();
+					
+					// reduce until index is found
+					while (operators[operators.length - 1] != TokenType.INDEX)
+						reduceExpression(operators, operands);
+					bracketLevel--;
+					
+					// convert index to DOT operator and reduce
+					operators.splice(-1, 1, TokenType.DOT);
+					reduceExpression(operators, operands);
+					break;
 					
 				    case TokenType.LEFT_PAREN:
 					if (tokenizer.scanOperand) {
@@ -747,6 +780,8 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 						else if (operators[operators.length - 1] == TokenType.NEW)
 							operators.splice(-1, 1, TokenType.NEW_WITH_ARGS);
 							
+							trace('coough');
+
 						// reduce now because CALL/NEW has no precedence
 						reduceExpression(operators, operands);
 					}
