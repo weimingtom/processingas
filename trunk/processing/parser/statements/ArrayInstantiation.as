@@ -24,7 +24,7 @@ package processing.parser.statements
 	}
 }
 
-class ArrayList extends Array {
+dynamic class ArrayList extends Array {
 	private var _type:*;
 
 	public function ArrayList( type:*, size:int = 0, size2:int = 0, size3:int = 0 ):void
