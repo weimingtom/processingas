@@ -26,13 +26,5 @@ package processing.parser
 			    context = context.parent);
 			return context;
 		}
-		
-		public static function getDefault():EvaluatorContext {
-			// get the standard 'global' context
-//[TODO] ...expand this?
-			return new EvaluatorContext({
-			    ArrayList: ArrayList
-			});
-		}
 	}
 }
