@@ -122,7 +122,8 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 			    case TokenType.VOID:
 			    case TokenType.FLOAT:
 			    case TokenType.INT:
-				if (tokenizer.peek(false, 3).match(TokenType.LEFT_PAREN)) {
+				if (tokenizer.peek(false, 2).match(TokenType.IDENTIFIER) &&
+				    tokenizer.peek(false, 3).match(TokenType.LEFT_PAREN)) {
 					// get parsed function
 					block.push(parseFunction());
 					return block;
@@ -779,8 +780,6 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 							operators.push(TokenType.CALL);
 						else if (operators[operators.length - 1] == TokenType.NEW)
 							operators.splice(-1, 1, TokenType.NEW_WITH_ARGS);
-							
-							trace('coough');
 
 						// reduce now because CALL/NEW has no precedence
 						reduceExpression(operators, operands);
@@ -892,8 +891,16 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 				operandList.push(new Operation(convertOperand(operands[0]), convertOperand(operands[1]), operator));
 				break;
 			
+			    // unary operators
+			    case TokenType.UNARY_PLUS:
+			    case TokenType.UNARY_MINUS:
+				// multiply by 1 or -1
+				operandList.push(new Operation(convertOperand(operands[0]),
+				    operator == TokenType.UNARY_PLUS ? 1 : -1, TokenType.MUL));
+				break;
+			
 			    default:
-				throw new Error('Unknown operator "' + operator.type + '"');
+				throw new Error('Unknown operator "' + operator + '"');
 			}
 		}
 		
