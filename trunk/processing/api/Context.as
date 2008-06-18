@@ -557,7 +557,11 @@ package processing.api {
 //[TODO] see effects order has on matrix!
 		public function translate( x:Number, y:Number ):void
 		{
-			shapeMatrix.translate(x, y);
+			// apply matrix transformations
+			var newMatrix = new Matrix();
+			newMatrix.translate(x, y);
+			newMatrix.concat(shapeMatrix);
+			shapeMatrix = newMatrix;
 		}
 		
 		public function scale( x:Number, y:Number = undefined ):void
@@ -567,22 +571,18 @@ package processing.api {
 		
 		public function rotate( aAngle:Number ):void
 		{
-			// clear translation temporarily
-			var tx:Number = shapeMatrix.tx;
-			var ty:Number = shapeMatrix.ty;
-			shapeMatrix.tx = shapeMatrix.ty = 0;
-			
-			// rotate and translate
-			shapeMatrix.rotate(aAngle);
-			shapeMatrix.translate(tx, ty);
+			// apply matrix transformations
+			var newMatrix = new Matrix();
+			newMatrix.rotate(aAngle);
+			newMatrix.concat(shapeMatrix);
+			shapeMatrix = newMatrix;
 		}
 		
 		private var matrixStack:Array = [];
 		
 		public function pushMatrix()
 		{
-			matrixStack.push(shapeMatrix);
-			shapeMatrix = new Matrix();
+			matrixStack.push(shapeMatrix.clone());
 		}
 		
 		public function popMatrix()

@@ -805,10 +805,23 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 					
 				    case TokenType.LEFT_PAREN:
 					if (tokenizer.scanOperand) {
-						// begin parenthetical
-						tokenizer.get();
-						operators.push(TokenType.GROUP);
-						parenLevel++;
+						// check if this be a cast or a group
+						if ((tokenizer.peek(false, 2).match(TokenType.FLOAT) || 
+						    tokenizer.peek(false, 2).match(TokenType.INT)) &&
+						    tokenizer.peek(false, 3).match(TokenType.RIGHT_PAREN)) {
+							// push type as an operand
+							tokenizer.get();
+							operands.push(tokenizer.get().type);
+							tokenizer.get();
+							
+							// push casting operator
+							operators.push(TokenType.CAST);
+						} else {
+							// begin parenthetical
+							tokenizer.get();
+							operators.push(TokenType.GROUP);
+							parenLevel++;
+						}
 					} else {
 						// reduce until we get the current function (or lower operator precedence than 'new')
 						while (operators.length &&
@@ -894,14 +907,17 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 			    case TokenType.CALL:
 				operandList.push(new Call(operands[0], operands[1]));
 				break;
+			
+			    // casting
+			    case TokenType.CAST:
+			        operandList.push(new Cast(operands[0], operands[1]));
+			        break;
 				
 			    // increment/decrement
 			    case TokenType.INCREMENT:
 			    case TokenType.DECREMENT:
-				// expand expression
-				var changeExpression:Operation = new Operation(operands[0], 1,
-				    operator == TokenType.INCREMENT ? TokenType.PLUS : TokenType.MINUS);
-			        operandList.push(new Assignment(operands[0], changeExpression));
+			        operandList.push(new Assignment(operands[0], new Operation(operands[0], 1,
+				    operator == TokenType.INCREMENT ? TokenType.PLUS : TokenType.MINUS)));
 				break;
 				
 			    // assignment

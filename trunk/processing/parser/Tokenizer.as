@@ -52,7 +52,7 @@ package processing.parser {
 					// end
 					token = new Token(TokenType.END);
 				}
-				else if ((match = /^\d+\.\d*(?:[eE][-+]?\d+|f)?|^\d+(?:\.\d*)?[eE][-+]?\d+|^\.\d+(?:[eE][-+]?\d+)?/(input)))
+				else if ((match = /^\d+(?:\.\d*)?[fF]|^\d+\.\d*(?:[eE][-+]?\d+)?|^\d+(?:\.\d*)?[eE][-+]?\d+|^\.\d+(?:[eE][-+]?\d+)?/(input)))
 				{
 					// float
 					token = new Token(TokenType.NUMBER, parseFloat(match[0]));

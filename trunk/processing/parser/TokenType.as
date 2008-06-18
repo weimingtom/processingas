@@ -124,6 +124,7 @@ package processing.parser {
 		public static const CONDITIONAL:TokenType = new TokenType('CONDITIONAL', 2, 3);
 		public static const UNARY_PLUS:TokenType = new TokenType('UNARY_PLUS', 14, 1);
 		public static const UNARY_MINUS:TokenType = new TokenType('UNARY_MINUS', 14, 1);
+		public static const CAST:TokenType = new TokenType('CAST', 14, 2);
 
 		public static const OPS:Object = {
 			'\n':	NEWLINE,
