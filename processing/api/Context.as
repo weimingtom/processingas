@@ -1096,7 +1096,7 @@ package processing.api {
 		// Random
 
 		// From: http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
-		public function noise( x:Number, y:Number, z:Number = undefined ):Number
+		public function noise( x:Number, y:Number = undefined, z:Number = undefined ):Number
 		{
 			return arguments.length >= 2 ?
 				PerlinNoise_2D( x, y ) :
