@@ -2,12 +2,12 @@ package processing.parser.statements
 {
 	import processing.parser.*;
 
-	public class Instantiation implements IExecutable
+	public class ObjectInstantiation implements IExecutable
 	{
 		public var _func:*;
 		public var _args:Array;
 	
-		public function Instantiation(func:*, args:Array = undefined) {
+		public function ObjectInstantiation(func:*, args:Array = undefined) {
 			_func = func;
 			_args = args;
 		}

@@ -501,15 +501,16 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 			// get variable type
 			var varType = tokenizer.get().match(TokenType.IDENTIFIER) ?
 			    tokenizer.currentToken.value : tokenizer.currentToken.type;
+			// check for array brackets
+			var isArray:Boolean = tokenizer.match(TokenType.LEFT_BRACKET) &&
+			    tokenizer.match(TokenType.RIGHT_BRACKET, true);
+				    
 			// get variable list
 			var block:Block = new Block();
 			do {
 				// add definitions
 				tokenizer.match(TokenType.IDENTIFIER, true);
 				var varName:String = tokenizer.currentToken.value;
-				// check for array brackets
-				var isArray:Boolean = tokenizer.match(TokenType.LEFT_BRACKET) &&
-				    tokenizer.match(TokenType.RIGHT_BRACKET, true);
 				// add definition
 				block.push(new VariableDefinition(varName, varType, isArray));
 				
@@ -728,6 +729,30 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 //[TODO] convertToken here? (no; variable assignment prohibits this, unless identifiers become Reference objects?)
 					tokenizer.scanOperand = false;
 					break;
+					
+				    // array definition
+				    case TokenType.FLOAT:
+				    case TokenType.INT:
+//[TODO] support class arrays!
+//[TODO] can this be folded into reduce()?
+					// only add if scanning operands
+					if (!tokenizer.scanOperand)
+						break parseLoop;
+					tokenizer.get();
+					
+					// check for new operator
+					if (operators.pop() != TokenType.NEW)
+						throw new TokenizerSyntaxError('Invalid type declaration', tokenizer);
+					// get array initialization
+					tokenizer.match(TokenType.LEFT_BRACKET, true);
+					var size:* = parseExpression(TokenType.RIGHT_BRACKET);
+//[TODO] support multi-dimensional arrays
+					tokenizer.match(TokenType.RIGHT_BRACKET, true);
+					
+					// create array initializer
+					operands.push(new ArrayInstantiation(token.type, size));
+					tokenizer.scanOperand = false;
+				        break;
 				
 				    // brackets
 				    case TokenType.LEFT_BRACKET:
@@ -842,7 +867,7 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 				operands.push([]);
 				// fall-through
 			    case TokenType.NEW_WITH_ARGS:
-				operandList.push(new Instantiation(convertOperand(operands[0]), operands[1]));
+				operandList.push(new ObjectInstantiation(convertOperand(operands[0]), operands[1]));
 				break;
 			    
 			    // function call
@@ -853,6 +878,7 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 			    // increment/decrement
 			    case TokenType.INCREMENT:
 			    case TokenType.DECREMENT:
+				// expand expression
 				var getExpression:VariableGet = new VariableGet(operands[0].value);
 				var changeExpression:Operation = new Operation(getExpression, 1,
 				    operator == TokenType.INCREMENT ? TokenType.PLUS : TokenType.MINUS);
@@ -861,9 +887,17 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 				
 			    // assignment
 			    case TokenType.ASSIGN:
+//[TODO] ugh wtf if left side is array this won't work...
 				operandList.push(new VariableSet(operands[0].value, convertOperand(operands[1])));
 				break;
 				
+			    // unary operators
+			    case TokenType.UNARY_PLUS:
+			    case TokenType.UNARY_MINUS:
+				// convert to multiplication operation
+				operands.push(operator == TokenType.UNARY_PLUS ? 1 : -1);
+				operator = TokenType.MUL;
+				// fall-through				
 			    // operators
 			    case TokenType.OR:
 			    case TokenType.AND:
@@ -889,14 +923,6 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 			    case TokenType.MOD:
 			    case TokenType.DOT:
 				operandList.push(new Operation(convertOperand(operands[0]), convertOperand(operands[1]), operator));
-				break;
-			
-			    // unary operators
-			    case TokenType.UNARY_PLUS:
-			    case TokenType.UNARY_MINUS:
-				// multiply by 1 or -1
-				operandList.push(new Operation(convertOperand(operands[0]),
-				    operator == TokenType.UNARY_PLUS ? 1 : -1, TokenType.MUL));
 				break;
 			
 			    default:
