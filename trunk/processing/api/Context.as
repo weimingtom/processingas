@@ -124,8 +124,9 @@ package processing.api {
 			shape.graphics.endFill();
 
 			// rasterize and clear shape
-//			p.sprite.bitmapData.draw(shape, shapeMatrix, null, null, null, doSmooth);
-//			shape.graphics.clear();
+//[TODO] this is here cause of shapeMatrix... fix that later?
+			p.sprite.bitmapData.draw(shape, shapeMatrix, null, null, null, doSmooth);
+			shape.graphics.clear();
 		}
 		
 		// color conversion
@@ -603,7 +604,6 @@ package processing.api {
 			p.inDraw = true;
 			
 			// clear graphics and reset background
-			shape.graphics.clear();
 			if ( hasBackground )
 			{
 				background();
@@ -613,9 +613,6 @@ package processing.api {
 		public function endDraw()
 		{
 			p.inDraw = false;
-		
-			// rasterize shape drawing
-			p.sprite.bitmapData.draw(shape, shapeMatrix, null, null, null, doSmooth);
 		}
 		
 		public function loop()

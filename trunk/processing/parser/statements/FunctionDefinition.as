@@ -31,7 +31,7 @@ package processing.parser.statements
 				for (var i in args) {
 //[TODO] what happens when args/params differ?
 					(new VariableDefinition(_params[i][0], _params[i][1])).execute(funcContext);
-					(new VariableSet(_params[i][0], args[i])).execute(funcContext);
+					(new Assignment(new Reference(_params[i][0]), args[i])).execute(funcContext);
 				}
 				
 				// evaluate body
