@@ -12,7 +12,7 @@ package processing.parser {
 			var code:IExecutable = (p || new Parser()).parse(c);
 
 			// execute code
-			return code.execute(x || new EvaluatorContext());
+			return code.execute(x || EvaluatorContext.getDefault());
 		}
 	}
 }

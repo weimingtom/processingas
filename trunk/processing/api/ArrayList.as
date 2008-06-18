@@ -1,6 +1,7 @@
 package processing.api {
+//[TODO] not a real construct--should this be moved to procesing.parser?
 	public class ArrayList extends Array {
-		public function ArrayList( size, size2, size3 ):void
+		public function ArrayList( size, size2 = null, size3 = null ):void
 		{
 			super( 0 | size );
 			

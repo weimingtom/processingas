@@ -124,8 +124,8 @@ package processing.api {
 			shape.graphics.endFill();
 
 			// rasterize and clear shape
-			p.sprite.bitmapData.draw(shape, shapeMatrix, null, null, null, doSmooth);
-			shape.graphics.clear();
+//			p.sprite.bitmapData.draw(shape, shapeMatrix, null, null, null, doSmooth);
+//			shape.graphics.clear();
 		}
 		
 		// color conversion
@@ -242,16 +242,6 @@ package processing.api {
 			var ret:Context = pObj.context;
 			ret.size( w, h );
 			return ret;*/
-		}
-		
-		public function beginDraw()
-		{
-			//[TODO] uh
-		}
-
-		public function endDraw()
-		{
-			//[TODO] uh
 		}
 
 		public function tint( rgb:Number, a:Number ):void
@@ -543,7 +533,7 @@ package processing.api {
 			return vertex(x, y, x2, y2, x3, y3 );
 		}*/
 		
-		public function rectMode( aRectMode )
+		public function rectMode( aRectMode:Number ):void
 		{
 			curRectMode = aRectMode;
 		}
@@ -553,7 +543,7 @@ package processing.api {
 	
 		}
 		
-		public function ellipseMode( aEllipseMode )
+		public function ellipseMode( aEllipseMode:Number ):void
 		{
 			curEllipseMode = aEllipseMode;
 		}
@@ -601,16 +591,31 @@ package processing.api {
 		
 		public function redraw()
 		{
+			beginDraw()
+			pushMatrix();
+			draw();
+			popMatrix();
+			endDraw();
+		}
+		
+		public function beginDraw()
+		{
+			p.inDraw = true;
+			
+			// clear graphics and reset background
+			shape.graphics.clear();
 			if ( hasBackground )
 			{
 				background();
 			}
-			
-			p.inDraw = true;
-			pushMatrix();
-			draw();
-			popMatrix();
+		}
+		
+		public function endDraw()
+		{
 			p.inDraw = false;
+		
+			// rasterize shape drawing
+			p.sprite.bitmapData.draw(shape, shapeMatrix, null, null, null, doSmooth);
 		}
 		
 		public function loop()
@@ -838,8 +843,8 @@ package processing.api {
 			switch (curEllipseMode)
 			{
 			    case RADIUS:
-				break;
-
+				width *= 2;
+				height *= 2;
 			    case CENTER:
 				x -= (width / 2);
 				y -= (height / 2);
