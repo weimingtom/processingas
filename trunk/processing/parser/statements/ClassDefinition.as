@@ -6,10 +6,10 @@ package processing.parser.statements
 	{
 		public var _identifier:String;
 		public var _constructor:IExecutable;
-		public var _publicBody:Block;
-		public var _privateBody:Block;
+		public var _publicBody:IExecutable;
+		public var _privateBody:IExecutable;
 	
-		public function ClassDefinition(identifier:String, constructor:IExecutable, publicBody:Block, privateBody:Block) {
+		public function ClassDefinition(identifier:String, constructor:IExecutable, publicBody:IExecutable, privateBody:IExecutable) {
 			_identifier = identifier;
 			_constructor = constructor;
 			_publicBody = publicBody;

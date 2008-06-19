@@ -18,7 +18,7 @@ package processing.parser.statements
 			// get simplified reference
 			var ref:Reference = reduce(context);
 			// return value
-			return ref.base[ref.identifier];
+			return ref ? ref.base[ref.identifier] : ref;
 		}
 		
 		public function reduce(context:EvaluatorContext):Reference
@@ -41,7 +41,7 @@ package processing.parser.statements
 					return undefined;
 				var _base = c.scope;
 			}
-			
+
 			// return reduced reference
 			return new Reference(_identifier, _base);
 		}

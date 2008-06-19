@@ -65,9 +65,10 @@ package processing.parser {
 				else if ((match = /^\w+/(input)))
 				{
 					// keyword/identifier
-					var id:String = match[0];
-					token = new Token((TokenType.KEYWORDS[id] is TokenType ?
-					    TokenType.KEYWORDS[id] : TokenType.IDENTIFIER), id);
+					if (match[0] in TokenType.KEYWORDS)
+						token = new Token(TokenType.KEYWORDS[match[0]], TokenType.KEYWORDS[match[0]].value);
+					else
+						token = new Token(TokenType.IDENTIFIER, match[0]);
 				}
 				else if ((match = /^"(?:\\.|[^"])*"|^'(?:[^']|\\.)*'/(input)))
 				{

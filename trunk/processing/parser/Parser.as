@@ -41,7 +41,7 @@ package processing.parser {
 			var block:Block = new Block();
 //[TODO] should this be getting, or peeking... standardize on one
 			var token:Token = tokenizer.peek();
-trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
+//trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 			switch (token.type)
 			{			
 			    // { } block
@@ -79,7 +79,9 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 					// match variable definitions or expression
 					token = tokenizer.peek();
 //[TODO] handle other declaration types...
-					if (token.match(TokenType.INT) || token.match(TokenType.FLOAT))
+					if (token.match(TokenType.BOOLEAN) ||
+					    token.match(TokenType.FLOAT) ||
+					    token.match(TokenType.INT))
 						block.append(parseVariables());
 					else
 						block.push(parseExpression());
@@ -106,12 +108,39 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 				block.push(new Loop(condition || true, body));
 				return block;
 			
+			    // returns
+			    case TokenType.RETURN:
+				tokenizer.get();
+//[TODO]			if (!x.inFunction)
+//					throw t.newSyntaxError("Invalid return");
+
+//[TODO] can this be simplified?
+				// push return statement
+				token = tokenizer.peek(true);
+				if (!token.match(TokenType.END) &&
+				  !token.match(TokenType.NEWLINE) &&
+				  !token.match(TokenType.SEMICOLON) &&
+				  !token.match(TokenType.RIGHT_CURLY))
+					block.push(new Return(parseExpression()));
+				else
+					block.push(new Return(undefined));
+				break;
+
+			
 			    // empty expressions
 			    case TokenType.NEWLINE:
 			    case TokenType.SEMICOLON:
 				return undefined;
 				
-			    // class definitions
+			    // definition visibility
+			    case TokenType.PUBLIC:
+			    case TokenType.PRIVATE:
+//[TODO] what happens when "private" declared in main block?
+				// get definition
+				tokenizer.get();
+				block.push(tokenizer.peek().match(TokenType.CLASS) ? parseClass() : parseFunction());
+				return block;
+				
 			    case TokenType.CLASS:
 				// get class definition
 				block.push(parseClass());
@@ -120,6 +149,7 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 			    // definitions
 			    case TokenType.IDENTIFIER:
 			    case TokenType.VOID:
+			    case TokenType.BOOLEAN:
 			    case TokenType.FLOAT:
 			    case TokenType.INT:
 				if (tokenizer.peek(false, 2).match(TokenType.IDENTIFIER) &&
@@ -396,10 +426,13 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 		
 		private function parseFunction():FunctionDefinition {
 			// get function type
-			var funcType:TokenType =
+//[TODO] this is far from elegant
+			var funcType:* =
 			    tokenizer.match(TokenType.INT) ? TokenType.INT :
 			    tokenizer.match(TokenType.FLOAT) ? TokenType.FLOAT :
+			    tokenizer.match(TokenType.BOOLEAN) ? TokenType.BOOLEAN :
 			    tokenizer.match(TokenType.VOID) ? TokenType.VOID :
+			    tokenizer.peek(false, 2).match(TokenType.IDENTIFIER) ? tokenizer.get().value :
 			    TokenType.CONSTRUCTOR;
 			// get function name
 			tokenizer.match(TokenType.IDENTIFIER, true);
@@ -411,10 +444,14 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 			while (!tokenizer.peek().match(TokenType.RIGHT_PAREN))
 			{
 				// get type
-//[TODO] support classes
-				if (!tokenizer.match(TokenType.INT) && !tokenizer.match(TokenType.FLOAT))
+//[TODO] lump possible variable types into an array
+				if (!tokenizer.match(TokenType.INT) &&
+				    !tokenizer.match(TokenType.FLOAT) &&
+				    !tokenizer.match(TokenType.BOOLEAN) &&
+				    !tokenizer.match(TokenType.IDENTIFIER))
 					throw new TokenizerSyntaxError('Invalid formal parameter type', tokenizer);
-				var type:TokenType = tokenizer.currentToken.type;
+				var type:* = tokenizer.currentToken.match(TokenType.IDENTIFIER) ?
+				    tokenizer.currentToken.value : tokenizer.currentToken.type;
 				// get identifier
 				if (!tokenizer.match(TokenType.IDENTIFIER))
 					throw new TokenizerSyntaxError('Invalid formal parameter', tokenizer);
@@ -445,7 +482,7 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 			var className:String = tokenizer.currentToken.value;
 			
 			// parse body
-			var constructor:FunctionDefinition = null;
+			var constructor:Block = new Block();
 			var publicBody:Block = new Block(), privateBody:Block = new Block();
 			tokenizer.match(TokenType.LEFT_CURLY, true);
 			while (!tokenizer.peek().match(TokenType.RIGHT_CURLY))
@@ -460,29 +497,29 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 				var token:Token = tokenizer.peek();
 				switch (token.type) {
 				    // variable or function
+				    case TokenType.IDENTIFIER:
 				    case TokenType.VOID:
+				    case TokenType.BOOLEAN:
 				    case TokenType.FLOAT:
 				    case TokenType.INT:
 					if (tokenizer.peek(false, 3).match(TokenType.LEFT_PAREN))
 					{
 						// get parsed function
 						block.push(parseFunction());
+						break;
 					}
-					else
+					else if (!token.match(TokenType.IDENTIFIER) || token.value != className)
 					{
 						// get variable list
 						block.append(parseVariables());
 						// check for tailing semicolon
 						tokenizer.match(TokenType.SEMICOLON);
+						break;
 					}
-					break;
-				
-				    // constructor needs no return type
-				    case TokenType.IDENTIFIER:
-					if (token.value == className && !constructor)
+					else if (token.match(TokenType.IDENTIFIER) && token.value == className)
 					{
-						// get parsed constructor 
-						constructor = parseFunction();
+						// get type-less constructors
+						constructor.push(parseFunction());
 						break;
 					}
 					// invalid definition; fall-through
@@ -584,7 +621,7 @@ trace('Currently parsing in Statement: ' + TokenType.getConstant(token.type));
 				// get next token
 //[TODO] should we be peeking or getting?
 				token = tokenizer.peek();
-trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
+//trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 
 				// stop if token matches stop parameter (on original bracket level)
 				if (stopAt && token.match(stopAt) && !bracketLevel && !curlyLevel && !parenLevel && !hookLevel)
@@ -751,6 +788,7 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 					break;
 					
 				    // array definition
+				    case TokenType.BOOLEAN:
 				    case TokenType.FLOAT:
 				    case TokenType.INT:
 //[TODO] support class arrays!
@@ -806,12 +844,16 @@ trace('Currently parsing in Expression: ' + TokenType.getConstant(token.type));
 				    case TokenType.LEFT_PAREN:
 					if (tokenizer.scanOperand) {
 						// check if this be a cast or a group
-						if ((tokenizer.peek(false, 2).match(TokenType.FLOAT) || 
-						    tokenizer.peek(false, 2).match(TokenType.INT)) &&
+//[TODO] fix case where identifier is wrapped in group and is NOT casting
+						if ((tokenizer.peek(false, 2).match(TokenType.BOOLEAN) || 
+						    tokenizer.peek(false, 2).match(TokenType.FLOAT) || 
+						    tokenizer.peek(false, 2).match(TokenType.INT) ||
+						    tokenizer.peek(false, 2).match(TokenType.IDENTIFIER)) &&
 						    tokenizer.peek(false, 3).match(TokenType.RIGHT_PAREN)) {
 							// push type as an operand
 							tokenizer.get();
-							operands.push(tokenizer.get().type);
+							operands.push(tokenizer.get().match(TokenType.IDENTIFIER) ?
+							    tokenizer.currentToken.value : tokenizer.currentToken.type);
 							tokenizer.get();
 							
 							// push casting operator
