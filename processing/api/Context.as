@@ -9,6 +9,7 @@ package processing.api {
 	import flash.display.StageQuality;
 	import flash.geom.Rectangle;
 	import flash.geom.Matrix;
+	import flash.utils.getDefinitionByName;
 
 //[TODO] not dynamic!
 	dynamic public class Context {
@@ -209,7 +210,10 @@ package processing.api {
 		}
 		
 		// AniSprite class
-		public var AniSprite:Class = AniSprite;
+//		public var AniSprite:Class = getDefinitionByName('processing.api.AniSprite') as Class;
+		
+		// ArrayList class
+		public var ArrayList:Class = getDefinitionByName('processing.api.ArrayList') as Class;
 		
 		public function createImage( w, h, mode = null ):Object
 		{
@@ -1180,5 +1184,43 @@ package processing.api {
 		public const HALF_PI:Number = Math.PI / 2;
 		public const TWO_PI:Number = Math.PI * 2;
 		public const PI:Number = Math.PI;
+		
+		                public function extendClass( obj, args, fn )
+                {
+                        if ( arguments.length == 3 )
+                        {
+                                fn.apply( obj, args );
+                        }
+                        else
+                        {
+                                args.call( obj );
+                        }
+                }
+		
+		//=========================================================
+		// TEMPORARY
+		//=========================================================
+        
+                public function addMethod( object, name, fn )
+                {
+                        if ( object[ name ] )
+                        {
+                                var args = fn.length;
+                                
+                                var oldfn = object[ name ];
+                                object[ name ] = function()
+                                {
+                                        if ( arguments.length == args )
+                                                return fn.apply( this, arguments );
+                                        else
+                                                return oldfn.apply( this, arguments );
+                                };
+                        }
+                        else
+                        {
+                                object[ name ] = fn;
+                        }
+                }
+
 	}
 }

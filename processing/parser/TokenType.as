@@ -3,7 +3,7 @@ package processing.parser {
 	import flash.utils.*;
 	
 	public class TokenType {
-		public function TokenType(value:String = '', precedence:int = 0, arity:int = 0, type:int = 0):void {
+		public function TokenType(value:* = '', precedence:int = 0, arity:int = 0, type:int = 0):void {
 			_value = value;
 			_precedence = precedence;
 			_arity = arity;
@@ -14,8 +14,8 @@ package processing.parser {
 		// properties
 		//==============================================================
 
-		private var _value:String = '';
-		public function get value():String { return _value; }
+		private var _value:* = '';
+		public function get value():* { return _value; }
 
 		private var _precedence:int = 0;
 		public function get precedence():int { return _precedence; }
@@ -194,7 +194,7 @@ package processing.parser {
 		public static const DO:TokenType = new TokenType();
 		public static const ELSE:TokenType = new TokenType();
 		public static const ENUM:TokenType = new TokenType();
-		public static const FALSE:TokenType = new TokenType();
+		public static const FALSE:TokenType = new TokenType(false);
 		public static const FINALLY:TokenType = new TokenType();
 		public static const FOR:TokenType = new TokenType();
 		public static const FUNCTION:TokenType = new TokenType();
@@ -202,14 +202,14 @@ package processing.parser {
 		public static const IN:TokenType = new TokenType('in', 10, 2);
 		public static const INSTANCEOF:TokenType = new TokenType('instanceof', 10, 2);
 		public static const NEW:TokenType = new TokenType('new', 16, 1);
-		public static const NULL:TokenType = new TokenType();
+		public static const NULL:TokenType = new TokenType(null);
 		public static const PUBLIC:TokenType = new TokenType('public');
 		public static const PRIVATE:TokenType = new TokenType('private');
 		public static const RETURN:TokenType = new TokenType();
 		public static const SWITCH:TokenType = new TokenType();
 		public static const THIS:TokenType = new TokenType();
 		public static const THROW:TokenType = new TokenType();
-		public static const TRUE:TokenType = new TokenType();
+		public static const TRUE:TokenType = new TokenType(true);
 		public static const TRY:TokenType = new TokenType();
 		public static const TYPEOF:TokenType = new TokenType('typeof', 14, 1);
 		public static const VAR:TokenType = new TokenType();
@@ -217,11 +217,13 @@ package processing.parser {
 		public static const WHILE:TokenType = new TokenType();
 		public static const WITH:TokenType = new TokenType();
 		
-		public static const FLOAT:TokenType = new TokenType();
-		public static const INT:TokenType = new TokenType();
+		public static const BOOLEAN:TokenType = new TokenType('boolean');
+		public static const FLOAT:TokenType = new TokenType('float');
+		public static const INT:TokenType = new TokenType('int');
 
 // can trip on KEYWORDS[toString]...!
 		public static const KEYWORDS:Object = {
+			'boolean':	BOOLEAN,
 			'break':	BREAK,
 			'class':	CLASS,
 			'case':		CASE,

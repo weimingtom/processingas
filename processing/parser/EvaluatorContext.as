@@ -1,7 +1,5 @@
 package processing.parser
-{
-	import processing.api.*;
-	
+{	
 	public class EvaluatorContext
 	{
 //		public var caller;

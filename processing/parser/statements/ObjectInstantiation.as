@@ -20,7 +20,7 @@ package processing.parser.statements
 			var args:Array = [];
 			for each (var arg:* in _args)
 				args.push(arg is IExecutable ? arg.execute(context) : arg);
-			
+				
 			// create object instance
 			switch (args.length)
 			{
