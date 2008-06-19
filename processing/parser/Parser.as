@@ -158,7 +158,10 @@ package processing.parser {
 					block.push(parseFunction());
 					return block;
 				} else if (!token.match(TokenType.IDENTIFIER) ||
-				    tokenizer.peek(false, 2).match(TokenType.IDENTIFIER)) {
+				    tokenizer.peek(false, 2).match(TokenType.IDENTIFIER) ||
+//[TODO] this is a cute hack! figure out how to distinguish Class[] declaration from Array[] access...
+				    (tokenizer.peek(false, 2).match(TokenType.LEFT_BRACKET) &&
+					tokenizer.peek(false, 3).match(TokenType.RIGHT_BRACKET))) {
 					// get variable list
 					block = parseVariables();
 					break;
@@ -445,6 +448,7 @@ package processing.parser {
 			{
 				// get type
 //[TODO] lump possible variable types into an array
+//[TODO] sync this with parseVariables
 				if (!tokenizer.match(TokenType.INT) &&
 				    !tokenizer.match(TokenType.FLOAT) &&
 				    !tokenizer.match(TokenType.BOOLEAN) &&
@@ -452,6 +456,9 @@ package processing.parser {
 					throw new TokenizerSyntaxError('Invalid formal parameter type', tokenizer);
 				var type:* = tokenizer.currentToken.match(TokenType.IDENTIFIER) ?
 				    tokenizer.currentToken.value : tokenizer.currentToken.type;
+				// get array brackets
+//[TODO] do something with this:
+				tokenizer.match(TokenType.LEFT_BRACKET) && tokenizer.match(TokenType.RIGHT_BRACKET, true);
 				// get identifier
 				if (!tokenizer.match(TokenType.IDENTIFIER))
 					throw new TokenizerSyntaxError('Invalid formal parameter', tokenizer);
@@ -492,7 +499,7 @@ package processing.parser {
 				tokenizer.match(TokenType.PUBLIC);
 				if (tokenizer.match(TokenType.PRIVATE))
 				        block = privateBody;
-				
+//[TODO] sync this up with parseStatement...
 				// get next token
 				var token:Token = tokenizer.peek();
 				switch (token.type) {
@@ -508,7 +515,8 @@ package processing.parser {
 						block.push(parseFunction());
 						break;
 					}
-					else if (!token.match(TokenType.IDENTIFIER) || token.value != className)
+					else if (!token.match(TokenType.IDENTIFIER) || token.value != className ||
+					    tokenizer.peek(false, 2).match(TokenType.LEFT_BRACKET))
 					{
 						// get variable list
 						block.append(parseVariables());
@@ -764,10 +772,24 @@ package processing.parser {
 					if (!tokenizer.scanOperand)
 						break parseLoop;
 					tokenizer.get();
-
-					// push reference
-					operands.push(new Reference(token.value));
-					tokenizer.scanOperand = false;
+					
+					// check for new operator
+					if (operators[operators.length - 1] == TokenType.NEW &&
+					    tokenizer.match(TokenType.LEFT_BRACKET)) {
+						// get array initialization
+						var size:* = parseExpression(TokenType.RIGHT_BRACKET);
+//[TODO] support multi-dimensional arrays
+						tokenizer.match(TokenType.RIGHT_BRACKET, true);
+						
+						// create array initializer
+						operators.pop();
+						operands.push(new ArrayInstantiation(token.value, size));
+						tokenizer.scanOperand = false;
+					} else {
+						// push reference
+						operands.push(new Reference(token.value));
+						tokenizer.scanOperand = false;
+					}
 					break;
 
 				    // operands
@@ -799,7 +821,7 @@ package processing.parser {
 					tokenizer.get();
 					
 					// check for new operator
-					if (operators.pop() != TokenType.NEW)
+					if (operators[operators.length - 1] != TokenType.NEW)
 						throw new TokenizerSyntaxError('Invalid type declaration', tokenizer);
 					// get array initialization
 					tokenizer.match(TokenType.LEFT_BRACKET, true);
@@ -808,6 +830,7 @@ package processing.parser {
 					tokenizer.match(TokenType.RIGHT_BRACKET, true);
 					
 					// create array initializer
+					operators.pop();
 					operands.push(new ArrayInstantiation(token.type, size));
 					tokenizer.scanOperand = false;
 				        break;
@@ -818,7 +841,7 @@ package processing.parser {
 					if (tokenizer.scanOperand)
 						break parseLoop;
 					tokenizer.get();
-					
+
 					// property indexing operator.
 					operators.push(TokenType.INDEX);
 					tokenizer.scanOperand = true;
