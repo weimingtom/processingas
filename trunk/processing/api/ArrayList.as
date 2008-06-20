@@ -26,7 +26,7 @@ package processing.api
 			}
 			else
 			{
-				for ( var i = 0; i < size; i++ )
+				for ( var i = 0; i < size1; i++ )
 				{
 					this[i] = 0;
 				}
