@@ -768,7 +768,6 @@ package processing.parser {
 					
 				    // identifiers
 				    case TokenType.IDENTIFIER:
-//[TODO]			    case TokenType.THIS:
 					// only add if scanning operands
 					if (!tokenizer.scanOperand)
 						break parseLoop;
@@ -791,6 +790,17 @@ package processing.parser {
 						operands.push(new Reference(token.value));
 						tokenizer.scanOperand = false;
 					}
+					break;
+					
+				    case TokenType.THIS:
+					// only add if scanning operands
+					if (!tokenizer.scanOperand)
+						break parseLoop;
+					tokenizer.get();
+					
+					// push reference
+					operands.push(new ThisReference());
+					tokenizer.scanOperand = false;
 					break;
 
 				    // operands

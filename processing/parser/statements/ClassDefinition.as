@@ -25,7 +25,7 @@ package processing.parser.statements
 			
 				// create new evaluator contexts
 //[TODO] really this should modify .prototype...
-				var objContext:EvaluatorContext = new EvaluatorContext(this, context);
+				var objContext:EvaluatorContext = new EvaluatorContext(this, context, this);
 				var classContext:EvaluatorContext = new EvaluatorContext({}, objContext);
 				
 				// define variables
