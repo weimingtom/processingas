@@ -34,8 +34,8 @@ package processing.parser.statements
 			    case TokenType.STRICT_NE:		return a !== b;
 			    case TokenType.LT:			return a < b;
 			    case TokenType.LE:			return a <= b;
-			    case TokenType.GE:			return a > b;
-			    case TokenType.GT:			return a >= b;
+			    case TokenType.GT:			return a > b;
+			    case TokenType.GE:			return a >= b;
 			    case TokenType.IN:			return a in b;
 			    case TokenType.INSTANCEOF:		return a instanceof b;
 			    case TokenType.LSH:		return a << b;
