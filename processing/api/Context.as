@@ -88,7 +88,10 @@ package processing.api {
 			p = _p;
 		
 			// initialize state variables
-			start = (new Date).getTime();		
+			start = (new Date).getTime();
+			
+			//[TODO] separate this and math functions into proper class
+			this['Math'] = Math;
 		}
 
 		// stroke
@@ -433,33 +436,28 @@ package processing.api {
 				opacityRange = range4 ? range4 : opacityRange;
 			}
 		}
-/*
+
 		public function beginShape( type = POLYGON )
 		{
+//[TODO] prevent other shapes from drawing until endShape
 			curShape = type;
-			curShapeCount = 0; 
+			curShapeCount = 0;
+			beginShapeDrawing();
 		}
 		
 		public function endShape( close = true )
 		{
-			if ( curShapeCount != 0 )
-			{
-				curContext.lineTo( firstX, firstY );
-	
-				if ( doFill )
-					curContext.fill();
-					
-				if ( doStroke )
-					curContext.stroke();
-			
-				curContext.closePath();
-				curShapeCount = 0;
-				pathOpen = false;
-			}
-	
+			// close shape
 			if ( pathOpen )
 			{
-				curContext.closePath();
+				shape.graphics.lineTo( firstX, firstY );
+				pathOpen = false;
+			}
+			
+			if ( curShapeCount != 0 )
+			{
+				endShapeDrawing();
+				curShapeCount = 0;
 			}
 		}
 		
@@ -468,8 +466,7 @@ package processing.api {
 			if ( curShapeCount == 0 && curShape != POINTS )
 			{
 				pathOpen = true;
-				curContext.beginPath();
-				curContext.moveTo( x, y );
+				shape.graphics.moveTo( x, y );
 			}
 			else
 			{
@@ -481,24 +478,24 @@ package processing.api {
 				{
 					if ( curShape == TRIANGLE_STRIP && curShapeCount == 2 )
 					{
-						curContext.moveTo( prevX, prevY );
-						curContext.lineTo( firstX, firstY );
+						shape.graphics.moveTo( prevX, prevY );
+						shape.graphics.lineTo( firstX, firstY );
 					}
 	
-					curContext.lineTo( x, y );
+					shape.graphics.lineTo( x, y );
 				}
 				else if ( arguments.length == 4 )
 				{
 					if ( curShapeCount > 1 )
 					{
-			curContext.moveTo( prevX, prevY );
-						curContext.quadraticCurveTo( firstX, firstY, x, y );
-			curShapeCount = 1;
+						shape.graphics.moveTo( prevX, prevY );
+//[TODO]					shape.graphics.quadraticCurveTo( firstX, firstY, x, y );
+						curShapeCount = 1;
 					}
 				}
 				else if ( arguments.length == 6 )
 				{
-					curContext.bezierCurveTo( x, y, x2, y2, x3, y3 );
+//[TODO]				shape.graphics.bezierCurveTo( x, y, x2, y2, x3, y3 );
 					curShapeCount = -1;
 				}
 			}
@@ -522,7 +519,7 @@ package processing.api {
 				curShapeCount = 2;
 			}
 		}
-	
+	/*
 		public function curveTightness()
 		{
 	
@@ -770,11 +767,11 @@ package processing.api {
 			curContext.closePath();
 		}*/
 		
-		public function line( x1, y1, x2, y2 )
+		public function line( x1:Number = 0, y1:Number = 0, x2:Number = 0, y2:Number = 0):void
 		{
 			beginShapeDrawing();
-			shape.graphics.moveTo( x1 || 0, y1 || 0 );
-			shape.graphics.lineTo( x2 || 0, y2 || 0 );
+			shape.graphics.moveTo( x1, y1 );
+			shape.graphics.lineTo( x2, y2 );
 			endShapeDrawing();
 		}
 	
