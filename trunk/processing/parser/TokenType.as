@@ -206,6 +206,7 @@ package processing.parser {
 		public static const PUBLIC:TokenType = new TokenType('public');
 		public static const PRIVATE:TokenType = new TokenType('private');
 		public static const RETURN:TokenType = new TokenType();
+		public static const STATIC:TokenType = new TokenType('static');
 		public static const SWITCH:TokenType = new TokenType();
 		public static const THIS:TokenType = new TokenType();
 		public static const THROW:TokenType = new TokenType();
@@ -248,6 +249,7 @@ package processing.parser {
 			'public':	PUBLIC,
 			'private':	PRIVATE,
 			'return':	RETURN,
+			'static':	STATIC,
 			'switch':	SWITCH,
 			'this':		THIS,
 			'throw':	THROW,

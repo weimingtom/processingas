@@ -133,9 +133,10 @@ package processing.parser {
 				return undefined;
 				
 			    // definition visibility
+			    case TokenType.STATIC:
 			    case TokenType.PUBLIC:
 			    case TokenType.PRIVATE:
-//[TODO] what happens when "private" declared in main block?
+//[TODO] what happens when "private" declared in main block? "static"?
 				// get definition
 				tokenizer.get();
 				block.push(tokenizer.peek().match(TokenType.CLASS) ? parseClass() : parseFunction());
@@ -869,10 +870,12 @@ package processing.parser {
 						// check if this be a cast or a group
 //[TODO] fix case where identifier is wrapped in group and is NOT casting
 						if ((tokenizer.peek(false, 2).match(TokenType.BOOLEAN) || 
-						    tokenizer.peek(false, 2).match(TokenType.FLOAT) || 
-						    tokenizer.peek(false, 2).match(TokenType.INT) ||
-						    tokenizer.peek(false, 2).match(TokenType.IDENTIFIER)) &&
-						    tokenizer.peek(false, 3).match(TokenType.RIGHT_PAREN)) {
+						        tokenizer.peek(false, 2).match(TokenType.FLOAT) || 
+						        tokenizer.peek(false, 2).match(TokenType.INT) ||
+						        tokenizer.peek(false, 2).match(TokenType.IDENTIFIER)) &&
+						    tokenizer.peek(false, 3).match(TokenType.RIGHT_PAREN) &&
+// temporary fix for above
+						    !(tokenizer.peek(false, 4).value in TokenType.OPS)) {
 							// push type as an operand
 							tokenizer.get();
 							operands.push(tokenizer.get().match(TokenType.IDENTIFIER) ?
