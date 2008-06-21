@@ -5,22 +5,19 @@ package processing.parser.statements
 
 	public class ArrayInstantiation implements IExecutable
 	{
-		public var _type:*;
-		public var _size:*;
+		public var type:*;
+		public var size:IExecutable;
 	
-		public function ArrayInstantiation(type:*, size:*) {
+		public function ArrayInstantiation(t:*, s:IExecutable) {
 //[TODO] multi-dimensional arrays?
-			_type = type;
-			_size = size;
+			type = t;
+			size = s;
 		}
 	
 		public function execute(context:EvaluatorContext):*
 		{
-			// execute statements
-			var size = _size is IExecutable ? _size.execute(context) : _size;
-		
 			// return new ArrayList object
-			return new ArrayList(size, 0, 0, _type);
+			return new ArrayList(size.execute(context), 0, 0, type);
 		}
 	}
 }

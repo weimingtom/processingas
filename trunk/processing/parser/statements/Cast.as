@@ -5,9 +5,9 @@ package processing.parser.statements
 	public class Cast implements IExecutable
 	{
 		public var type:*;
-		public var expression:*;
+		public var expression:IExecutable;
 	
-		public function Cast(t:*, e:*) {
+		public function Cast(t:*, e:IExecutable) {
 			type = t;
 			expression = e;
 		}
@@ -16,7 +16,7 @@ package processing.parser.statements
 		{
 			// cast value
 //[TODO] actually cast this
-			return (expression is IExecutable) ? expression.execute(context) : expression;
+			return expression.execute(context);
 		}
 	}
 }

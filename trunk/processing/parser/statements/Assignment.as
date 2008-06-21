@@ -5,9 +5,9 @@ package processing.parser.statements
 	public class Assignment implements IExecutable
 	{
 		public var reference:Reference;
-		public var value:*;
+		public var value:IExecutable;
 	
-		public function Assignment(r:Reference, v:*)
+		public function Assignment(r:Reference, v:IExecutable)
 		{
 			reference = r;
 			value = v;
@@ -17,11 +17,8 @@ package processing.parser.statements
 		{
 			// reduce reference
 			var ref:Reference = reference.reduce(context);
-			// evaluate value
-			var val = value is IExecutable ? value.execute(context) : value;
-			
 			// set value
-			return ref.base[ref.identifier] = val;
+			return ref.base[ref.identifier] = value.execute(context);
 		}
 	}
 }

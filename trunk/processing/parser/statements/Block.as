@@ -22,8 +22,8 @@ package processing.parser.statements
 		{
 			// iterate block
 			var retValue:*;
-			for each (var statement:* in this)
-				retValue = (statement is IExecutable) ? statement.execute(context) : statement;
+			for each (var statement:IExecutable in this)
+				retValue = statement.execute(context);
 			return retValue;
 		}
 	}

@@ -2,6 +2,7 @@ package processing.parser
 {	
 	public class EvaluatorContext
 	{
+//[TODO] rename this to Scope class?
 //		public var caller;
 //		public var callee;
 		public var scope:Object = {};
