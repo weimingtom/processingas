@@ -4,25 +4,23 @@ package processing.parser.statements
 
 	public class Call implements IExecutable
 	{
-		public var _func:*;
-		public var _args:Array;
+		public var method:IExecutable;
+		public var args:Array;
 	
-		public function Call(func:*, args:Array = undefined) {
-			_func = func;
-			_args = args;
+		public function Call(method:IExecutable, a:Array = null) {
+			method = m;
+			args = a;
 		}
 	
 		public function execute(context:EvaluatorContext):*
 		{
-			// evaluate statements
-			var func = _func is IExecutable ? _func.execute(context) : _func;
-			// iterate args for statements
-			var args:Array = [];
-			for each (var arg:* in _args)
-				args.push(arg is IExecutable ? arg.execute(context) : arg);
+			// iterate args statements
+			var parsedArgs:Array = [];
+			for each (var arg:IExecutable in args)
+				parsedArgs.push(arg.execute(context));
 		
 			// apply function
-			return func.apply(context, args);
+			return method.execute(context).apply(context, parsedArgs);
 		}
 	}
 }

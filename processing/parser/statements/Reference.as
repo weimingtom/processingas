@@ -4,10 +4,10 @@ package processing.parser.statements
 
 	public class Reference implements IExecutable
 	{
-		public var identifier:*;
-		public var base:Object;
+		public var identifier:IExecutable;
+		public var base:IExecutable;
 	
-		public function Reference(i:*, b:Object = null)
+		public function Reference(i:IExecutable, b:IExecutable = null)
 		{
 			identifier = i;
 			base = b;
@@ -24,12 +24,12 @@ package processing.parser.statements
 		public function reduce(context:EvaluatorContext):Reference
 		{
 			// evaluate identifier
-			var _identifier = (identifier is IExecutable) ? identifier.execute(context) : identifier;
-			// reduce base reference in current context
+			var identifier = this.identifier.execute(context);
+			// evaluate base reference in current context
 			if (base)
 			{
 				// base object exists
-				var _base = (base is IExecutable) ? base.execute(context) : base;
+				var base = this.base.execute(context);
 			}
 			else
 			{
@@ -39,11 +39,11 @@ package processing.parser.statements
 				    c = c.parent);
 				if (!c)
 					return undefined;
-				var _base = c.scope;
+				var base = c.scope;
 			}
 
 			// return reduced reference
-			return new Reference(_identifier, _base);
+			return new Reference(identifier, base);
 		}
 	}
 }

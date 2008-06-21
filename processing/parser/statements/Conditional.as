@@ -4,23 +4,23 @@ package processing.parser.statements
 
 	public class Conditional implements IExecutable
 	{
-		public var _condition:*;
-		public var _thenBlock:Block;
-		public var _elseBlock:Block;
+		public var condition:IExecutable;
+		public var thenBlock:IExecutable;
+		public var elseBlock:IExecutable;
 	
-		public function Conditional(condition:*, thenBlock:Block, elseBlock:Block = null)
+		public function Conditional(c:IExecutable, t:IExecutable, e:IExecutable = null)
 		{
-			_condition = condition;
-			_thenBlock = thenBlock;
-			_elseBlock = elseBlock;
+			condition = c;
+			thenBlock = t;
+			elseBlock = e;
 		}
 	
 		public function execute(context:EvaluatorContext):*
 		{
-			if (_condition is IExecutable ? _condition.execute(context) : _condition)
-				_thenBlock.execute(context);
-			else if (_elseBlock)
-				_elseBlock.execute(context);
+			if (condition.execute(context))
+				thenBlock.execute(context);
+			else if (elseBlock)
+				elseBlock.execute(context);
 		}
 	}
 }

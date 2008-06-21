@@ -4,20 +4,20 @@ package processing.parser.statements
 
 	public class VariableDefinition implements IExecutable
 	{
-		public var _identifier:String;
-		public var _type:*;
-		public var _isArray:Boolean;
+		public var identifier:String;
+		public var type:*;
+		public var isArray:Boolean;
 	
-		public function VariableDefinition(identifier:String, type:*, isArray:Boolean = false) {
-			_identifier = identifier;
-			_type = type;
-			_isArray = isArray;
+		public function VariableDefinition(i:String, t:*, a:Boolean = false) {
+			identifier = i;
+			type = t;
+			isArray = a;
 		}
 	
 		public function execute(context:EvaluatorContext):*
 		{
 //[TODO] do something with type/array
-			context.scope[_identifier] = undefined;
+			context.scope[identifier] = undefined;
 		}
 	}
 }

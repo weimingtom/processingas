@@ -4,21 +4,22 @@ package processing.parser.statements
 
 	public class ClassDefinition implements IExecutable
 	{
-		public var _identifier:String;
-		public var _constructor:IExecutable;
-		public var _publicBody:IExecutable;
-		public var _privateBody:IExecutable;
+		public var identifier:String;
+		public var constructorBody:IExecutable;
+		public var publicBody:IExecutable;
+		public var privateBody:IExecutable;
 	
-		public function ClassDefinition(identifier:String, constructor:IExecutable, publicBody:IExecutable, privateBody:IExecutable) {
-			_identifier = identifier;
-			_constructor = constructor;
-			_publicBody = publicBody;
-			_privateBody = privateBody;
+		public function ClassDefinition(i:String, c:IExecutable, pu:IExecutable, pr:IExecutable) {
+			identifier = i;
+			constructorBody = c;
+			publicBody = pu;
+			privateBody = pr;
 		}
 		
 		public function execute(context:EvaluatorContext):*
 		{
-			context.scope[_identifier] = function (... args)
+			// create class constructor
+			context.scope[identifier] = function (... args)
 			{
 				// check that this be called as a constructor
 //[TODO] that
@@ -29,14 +30,14 @@ package processing.parser.statements
 				var classContext:EvaluatorContext = new EvaluatorContext({}, objContext);
 				
 				// define variables
-				_publicBody.execute(objContext);
-				_privateBody.execute(classContext);
+				publicBody.execute(objContext);
+				privateBody.execute(classContext);
 
 				// call constructor
-				if (_constructor) {
+				if (constructorBody) {
 //[TODO] look into alternate means of defining constructor?
-					_constructor.execute(classContext);
-					classContext.scope[_identifier].apply(classContext.scope, args);
+					constructorBody.execute(classContext);
+					classContext.scope[identifier].apply(classContext.scope, args);
 				}
 			}
 		}

@@ -4,25 +4,33 @@ package processing.parser.statements
 
 	public class Operation implements IExecutable
 	{
-		public var _a:*;
-		public var _b:*;
-		public var _type:TokenType;
+		public var type:TokenType;
+		public var leftOperand:IExecutable;
+		public var rightOperand:IExecutable;
 	
-		public function Operation(a:*, b:*, type:TokenType)
+		public function Operation(t:TokenType, l:IExecutable, r:IExecutable = null)
 		{
-			_a = a;
-			_b = b;
-			_type = type;
+			type = t;
+			leftOperand = l;
+			rightOperand = r;
 		}
 	
 		public function execute(context:EvaluatorContext):*
 		{
-			// evaluate statements
-			var a = _a is IExecutable ? _a.execute(context) : _a;
-			var b = _b is IExecutable ? _b.execute(context) : _b;
+			// evaluate operands
+			var a:* = leftOperand.execute(context);
+			if (rightOperand)
+				var b:* = rightOperand.execute(context)
 
-			// execute expression
-			switch (_type) {
+			// evaluate operation
+			switch (type) {
+			    // unary operators
+			    case TokenType.NOT:			return !a;
+			    case TokenType.BITWISE_NOT:		return ~a;
+			    case TokenType.UNARY_PLUS:		return +a;
+			    case TokenType.UNARY_MINUS:		return -a;
+
+			    // binary operators
 			    case TokenType.OR:			return a || b;
 			    case TokenType.AND:		return a && b;
 			    case TokenType.BITWISE_OR:		return a | b;
