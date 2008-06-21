@@ -786,7 +786,7 @@ package processing.api {
 			curContext.stroke();
 			
 			curContext.closePath();
-		}
+		}*/
 	
 		public function triangle( x1, y1, x2, y2, x3, y3 )
 		{
@@ -805,7 +805,7 @@ package processing.api {
 			vertex( x3, y3 );
 			vertex( x4, y4 );
 			endShape();
-		}*/
+		}
 		
 		public function rect( x:Number, y:Number, width:Number, height:Number )
 		{

@@ -66,7 +66,7 @@ package processing.parser {
 		public static const FOR_IN:TokenType = new TokenType('FOR_IN');
 		public static const CALL:TokenType = new TokenType('CALL', null, 2);
 		public static const NEW_WITH_ARGS:TokenType = new TokenType('NEW_WITH_ARGS', null, 2);
-		public static const INDEX:TokenType = new TokenType('INDEX', null, 2);
+		public static const INDEX:TokenType = new TokenType('INDEX', 17, 2);
 		public static const ARRAY_INIT:TokenType = new TokenType('ARRAY_INIT', null, 1);
 		public static const OBJECT_INIT:TokenType = new TokenType('OBJECT_INIT', null, 1);
 		public static const PROPERTY_INIT:TokenType = new TokenType('PROPERTY_INIT');

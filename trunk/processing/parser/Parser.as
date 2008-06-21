@@ -24,9 +24,6 @@ package processing.parser {
 		}
 		
 		private function parseBlock(stopAt:TokenType = null):Block {
-			// create new parser context
-			context = new ParserContext;
-		
 			// parse code block
 			var block:Block = new Block();
 //[TODO] right_curly should be a stopAt
@@ -34,8 +31,6 @@ package processing.parser {
 				block.append(parseStatement());
 			return block;			
 		}
-
-//[TODO] make statements out of literals?
 
 		private function parseStatement():Block {
 			// parse current statement line
@@ -87,7 +82,7 @@ package processing.parser {
 					    token.match(TokenType.INT))
 						block.append(parseVariables());
 					else
-						block.push(parseExpression());
+						block.push(parseExpression(TokenType.SEMICOLON));
 						
 					// next semicolon
 					tokenizer.match(TokenType.SEMICOLON, true);
@@ -95,11 +90,11 @@ package processing.parser {
 				
 				// match condition
 				var condition:IExecutable = (tokenizer.peek().match(TokenType.SEMICOLON)) ?
-				    null : parseExpression();
+				    new Literal(true) : parseExpression(TokenType.SEMICOLON);
 				tokenizer.match(TokenType.SEMICOLON, true);
 				// match update
 				var update:IExecutable = (tokenizer.peek().match(TokenType.RIGHT_PAREN)) ?
-				    undefined : parseExpression();
+				    undefined : parseExpression(TokenType.RIGHT_PAREN);
 				tokenizer.match(TokenType.RIGHT_PAREN, true);
 				// parse body
 				var body:Block = parseStatement();
@@ -108,7 +103,7 @@ package processing.parser {
 				if (update)
 					body.push(update);
 				// push for loop
-				block.push(new Loop(condition || true, body));
+				block.push(new Loop(condition, body));
 				return block;
 			
 			    // returns
@@ -128,12 +123,6 @@ package processing.parser {
 				else
 					block.push(new Return(undefined));
 				break;
-
-			
-			    // empty expressions
-			    case TokenType.NEWLINE:
-			    case TokenType.SEMICOLON:
-				return undefined;
 				
 			    // definition visibility
 			    case TokenType.STATIC:
@@ -174,23 +163,13 @@ package processing.parser {
 			
 			    // expression
 			    default:
-				block.push(parseExpression());
+				block.push(parseExpression(TokenType.SEMICOLON));
 				break;
 			}
 			
-			// check for proper termination
-			if (token.line == tokenizer.currentToken.line) {
-				var nextToken:Token = tokenizer.peek(true);
-				if (!nextToken.match(TokenType.END) &&
-				    !nextToken.match(TokenType.NEWLINE) &&
-				    !nextToken.match(TokenType.SEMICOLON) &&
-				    !nextToken.match(TokenType.RIGHT_CURLY))
-					throw new TokenizerSyntaxError('Missing ; before statement', tokenizer);
-			}
-			// eliminate tailing semicolon
-//[TODO] ensure this applies to all statements where necessary...
-			tokenizer.match(TokenType.SEMICOLON);
-			
+			// match terminating semicolon
+			if (!tokenizer.match(TokenType.SEMICOLON))
+				throw new TokenizerSyntaxError('Missing ; after statement', tokenizer);
 			// return parsed statement
 			return block;
 		}
@@ -243,14 +222,15 @@ package processing.parser {
 			
 			// parse body
 			tokenizer.match(TokenType.LEFT_CURLY, true);
-			var body:Block = parseBlock();
+			var body:Block = parseBlock(TokenType.RIGHT_CURLY);
 			tokenizer.match(TokenType.RIGHT_CURLY, true);
 			
 			// return function declaration statement
 			return new FunctionDefinition(funcName, funcType, params, body);
 		}
 		
-		private function parseClass():ClassDefinition {
+		private function parseClass():ClassDefinition
+		{
 			// get class name
 			tokenizer.match(TokenType.CLASS, true);
 			tokenizer.match(TokenType.IDENTIFIER, true);
@@ -310,7 +290,8 @@ package processing.parser {
 			return new ClassDefinition(className, constructor, publicBody, privateBody);
 		}
 		
-		private function parseVariables():Block {
+		private function parseVariables():Block
+		{
 			// get variable type
 			var varType = tokenizer.get().match(TokenType.IDENTIFIER) ?
 			    tokenizer.currentToken.value : tokenizer.currentToken.type;
@@ -338,7 +319,8 @@ package processing.parser {
 						throw new TokenizerSyntaxError('Invalid variable initialization', tokenizer);
 
 					// get initializer statement
-					block.push(new Assignment(new Reference(varName), parseExpression(TokenType.COMMA)));
+					block.push(new Assignment(new Reference(new Literal(varName)),
+					    parseExpression(TokenType.COMMA)));
 				}
 			} while (tokenizer.match(TokenType.COMMA));
 			
@@ -347,7 +329,8 @@ package processing.parser {
 		}
 		
 //[TODO] since Processing doesn't have array initializers, deffinitely move this into function call
-		private function parseList(stopAt:TokenType):Array {
+		private function parseList(stopAt:TokenType):Array
+		{
 			// parse a list (array initializer, function call, &c.)
 			var list:Array = [];
 			while (!tokenizer.peek().match(stopAt)) {
@@ -363,21 +346,38 @@ package processing.parser {
 			}
 			return list;
 		}
+		
+		private function parseExpression(stopAt:TokenType = undefined):IExecutable
+		{
+			// variable definitions
+			var operators:Array = [], operands:Array = [];
+		
+			// main loop
+			if (scanOperand(operators, operands, stopAt))
+				while (scanOperator(operators, operands, stopAt))
+					scanOperand(operators, operands, stopAt, true);
+				
+			// reduce to a single operand
+			while (operators.length)
+				reduceExpression(operators, operands);
+			return operands.pop();
+		}
 
-		private function scanOperand(operators:Array, operands:Array, stopAt:TokenType = null, required:Boolean = false):Boolean {
+		private function scanOperand(operators:Array, operands:Array, stopAt:TokenType = null, required:Boolean = false):Boolean
+		{
 			// get next token
 			tokenizer.scanOperand = true;
 			var token:Token = tokenizer.peek();
 			// stop if token matches stop parameter
 			if (stopAt && token.match(stopAt))
 				return false;
-			
+
 			// switch based on type
-			switch (token.type) {			
-			    // prefix
+			switch (token.type)
+			{			
+			    // unary operators
 			    case TokenType.INCREMENT:
 			    case TokenType.DECREMENT:
-			    // unary operators
 //[TODO] which of these are used in processing?
 			    case TokenType.DELETE:
 			    case TokenType.TYPEOF:
@@ -389,7 +389,9 @@ package processing.parser {
 				// add operator
 				tokenizer.get();
 				operators.push(token.type);
-				break;
+				
+				// match operand
+				return scanOperand(operators, operands, stopAt, true);
 				
 			    // identifiers
 			    case TokenType.IDENTIFIER:
@@ -408,7 +410,7 @@ package processing.parser {
 					operands.push(new ArrayInstantiation(token.value, size));
 				} else {
 					// push reference
-					operands.push(new Reference(token.value));
+					operands.push(new Reference(new Literal(token.value)));
 				}
 				break;
 				
@@ -457,13 +459,13 @@ package processing.parser {
 
 				// check if this be a cast or a group
 //[TODO] fix case where identifier is wrapped in group and is NOT casting
-				if ((tokenizer.peek(false, 2).match(TokenType.BOOLEAN) || 
-				        tokenizer.peek(false, 2).match(TokenType.FLOAT) || 
-				        tokenizer.peek(false, 2).match(TokenType.INT) ||
-				        tokenizer.peek(false, 2).match(TokenType.IDENTIFIER)) &&
-				    tokenizer.peek(false, 3).match(TokenType.RIGHT_PAREN) &&
+				if ((tokenizer.peek().match(TokenType.BOOLEAN) || 
+				        tokenizer.peek().match(TokenType.FLOAT) || 
+				        tokenizer.peek().match(TokenType.INT) ||
+				        tokenizer.peek().match(TokenType.IDENTIFIER)) &&
+				    tokenizer.peek(false, 2).match(TokenType.RIGHT_PAREN) &&
 // temporary fix for above
-				    !(tokenizer.peek(false, 4).value in TokenType.OPS)) {
+				    !(tokenizer.peek(false, 3).value in TokenType.OPS)) {
 					// push type as an operand
 					operands.push(tokenizer.get().match(TokenType.IDENTIFIER) ?
 					    tokenizer.currentToken.value : tokenizer.currentToken.type);
@@ -471,6 +473,8 @@ package processing.parser {
 					
 					// push casting operator
 					operators.push(TokenType.CAST);
+					// match operand
+					return scanOperand(operators, operands, stopAt, true);
 				} else {
 					// parse parenthetical
 					operands.push(parseExpression(TokenType.RIGHT_PAREN));
@@ -503,26 +507,26 @@ package processing.parser {
 			switch (token.type) {				
 			    // assignment
 			    case TokenType.ASSIGN:
-//[TODO] does hook/colon exist in Processing? if not, fold this into regular operators
-				// eliminate operators of higher precedence (use >, not >=, for right-associative ASSIGN)
+				// combine any higher-precedence expressions (using > and not >=, so postfix > prefix)
 				while (operators.length &&
 				    operators[operators.length - 1].precedence > token.type.precedence)
 					reduceExpression(operators, operands);
-				
-				// push assignment operator
+					
+				// push operator
 				operators.push(tokenizer.get().type);
-//[TODO] check that this expansion is flawless
-				// expand assignment operator
+				// expand assignment operators
 				if (token.assignOp) {
 					operators.push(token.assignOp);
 					operands.push(operands[operands.length-1]);
 				}
-				// scan for next operand
-				tokenizer.scanOperand = true;
-				break;
+				// push assignment value
+				operands.push(parseExpression(stopAt));
+
+				// reached end of expression
+				return false;
 				
 			    // dot operator
-			    case TokenType.DOT:				
+			    case TokenType.DOT:			
 				// combine any higher-precedence expressions
 				while (operators.length &&
 				    operators[operators.length - 1].precedence >= token.type.precedence)
@@ -532,10 +536,10 @@ package processing.parser {
 				operators.push(tokenizer.get().type);
 				// match and push required identifier as string
 				tokenizer.match(TokenType.IDENTIFIER, true);
-				operands.push(tokenizer.currentToken.value);
+				operands.push(new Literal(tokenizer.currentToken.value));
 
 				// operand already found; find next operator
-				return scanOperator();
+				return scanOperator(operators, operands, stopAt);
 			
 			    // operators
 			    case TokenType.OR:
@@ -593,8 +597,9 @@ package processing.parser {
 					throw new TokenizerSyntaxError('Missing ] in index expression', tokenizer);
 
 				// operand already found; find next operator
-				return scanOperator();
-				
+				return scanOperator(operators, operands, stopAt);
+			
+			    // call/instantiation
 			    case TokenType.LEFT_PAREN:
 				// reduce until we get the current function (or lower operator precedence than 'new')
 				while (operators.length &&
@@ -605,7 +610,7 @@ package processing.parser {
 				tokenizer.match(TokenType.LEFT_PAREN, true);
 				operands.push(parseList(TokenType.RIGHT_PAREN));
 				tokenizer.match(TokenType.RIGHT_PAREN, true);
-
+				
 				// designate call operator, or that 'new' has args
 				if (!operators.length || operators[operators.length - 1] != TokenType.NEW)
 					operators.push(TokenType.CALL);
@@ -614,10 +619,11 @@ package processing.parser {
 //[TODO] completely reduce here?
 				// reduce now because CALL/NEW has no precedence
 				reduceExpression(operators, operands);
-				break;
 
-			    // end-of-line, or no operator found
-			    case TokenType.SEMICOLON;
+				// operand already found; find next operator
+				return scanOperator(operators, operands, stopAt);
+
+			    // no operator found
 			    default:
 				return false;
 			}
@@ -626,34 +632,15 @@ package processing.parser {
 			return true;
 		}
 
-		private function parseExpression(stopAt:TokenType = undefined):* {
-			// variable definitions
-			var operators:Array = [], operands:Array = [];
-		
-			// main loop
-			if (scanOperand(operators, operands, stopAt))
-				while (scanOperator(operators, operands, stopAt)
-					scanOperand(operators, operands, stopAt, true);
-				
-			// reduce to a single operand
-			while (operators.length)
-				reduceExpression(operators, operands);
-			return operands.pop();
-		}
-
 //[TODO] integrate some of this into other functions?
 		private function reduceExpression(operatorList:Array, operandList:Array):void {
 			// extract operator and operands
 			var operator:TokenType = operatorList.pop();
 			var operands:Array = operandList.splice(operandList.length - operator.arity);
-			
 			// convert expression to statements
 			switch (operator) {
 			    // object instantiation
 			    case TokenType.NEW:
-				// push empty argument array
-				operands.push([]);
-				// fall-through
 			    case TokenType.NEW_WITH_ARGS:
 				operandList.push(new ObjectInstantiation(operands[0], operands[1]));
 				break;
@@ -670,10 +657,10 @@ package processing.parser {
 				
 			    // increment/decrement
 			    case TokenType.INCREMENT:
+				operandList.push(new Increment(operands[0]));
+				break;
 			    case TokenType.DECREMENT:
-			        operandList.push(new Assignment(operands[0], new Operation(
-				    operator == TokenType.INCREMENT ? TokenType.PLUS : TokenType.MINUS,
-				    operands[0], 1)));
+			        operandList.push(new Decrement(operands[0]));
 				break;
 				
 			    // assignment
@@ -681,7 +668,8 @@ package processing.parser {
 				operandList.push(new Assignment(operands[0], operands[1]));
 				break;
 				
-			    // dot operator
+			    // property operator
+			    case TokenType.INDEX:
 			    case TokenType.DOT:
 				operandList.push(new Reference(operands[1], operands[0]));
 			        break;

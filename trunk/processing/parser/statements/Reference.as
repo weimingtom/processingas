@@ -16,34 +16,35 @@ package processing.parser.statements
 		public function execute(context:EvaluatorContext):*
 		{
 			// get simplified reference
-			var ref:Reference = reduce(context);
+			var ref:Array = reduce(context);
 			// return value
-			return ref ? ref.base[ref.identifier] : ref;
+			return ref ? ref[1][ref[0]] : undefined;
 		}
 		
-		public function reduce(context:EvaluatorContext):Reference
+		// reduce to [identifier, base] array pair for assignments
+		public function reduce(context:EvaluatorContext):Array
 		{
 			// evaluate identifier
-			var identifier = this.identifier.execute(context);
+			var identifier:String = this.identifier.execute(context);
 			// evaluate base reference in current context
 			if (base)
 			{
 				// base object exists
-				var base = this.base.execute(context);
+				var base:Object = this.base.execute(context);
 			}
 			else
 			{
 				// climb context inheritance to find declared identifier
 				for (var c:EvaluatorContext = context;
-				    c && !c.scope.hasOwnProperty(_identifier);
+				    c && !c.scope.hasOwnProperty(identifier);
 				    c = c.parent);
 				if (!c)
-					return undefined;
-				var base = c.scope;
+					return null;
+				var base:Object = c.scope;
 			}
 
 			// return reduced reference
-			return new Reference(identifier, base);
+			return [identifier, base];
 		}
 	}
 }

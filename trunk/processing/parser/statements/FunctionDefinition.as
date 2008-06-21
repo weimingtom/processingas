@@ -58,8 +58,9 @@ package processing.parser.statements
 				for (var i in args)
 				{
 //[TODO] what happens when args/params differ?
+//[TODO] maybe shortcut something here?
 					(new VariableDefinition(params[i][0], params[i][1])).execute(funcContext);
-					(new Assignment(new Reference(params[i][0]), args[i])).execute(funcContext);
+					(new Assignment(new Reference(new Literal(params[i][0])), new Literal(args[i]))).execute(funcContext);
 				}
 				
 				try
@@ -71,7 +72,7 @@ package processing.parser.statements
 				{
 					// handle returns
 //[TODO] do something with type
-					return (ret.value is IExecutable) ? ret.value.execute(funcContext) : ret.value;
+					return ret.value.execute(funcContext);
 				}
 			}
 		}
