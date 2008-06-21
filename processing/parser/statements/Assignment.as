@@ -16,9 +16,9 @@ package processing.parser.statements
 		public function execute(context:EvaluatorContext):*
 		{
 			// reduce reference
-			var ref:Reference = reference.reduce(context);
+			var ref:Array = reference.reduce(context);
 			// set value
-			return ref.base[ref.identifier] = value.execute(context);
+			return ref[1][ref[0]] = value.execute(context);
 		}
 	}
 }

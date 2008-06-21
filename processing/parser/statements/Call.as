@@ -7,7 +7,7 @@ package processing.parser.statements
 		public var method:IExecutable;
 		public var args:Array;
 	
-		public function Call(method:IExecutable, a:Array = null) {
+		public function Call(m:IExecutable, a:Array = null) {
 			method = m;
 			args = a;
 		}
