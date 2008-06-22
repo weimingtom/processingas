@@ -608,6 +608,11 @@ package processing.parser {
 				
 			    // brackets
 			    case TokenType.LEFT_BRACKET:
+				// combine any higher-precedence expressions
+				while (operators.length &&
+				    operators[operators.length - 1].precedence >= token.type.precedence)
+					reduceExpression(operators, operands);
+
 				// begin array index operator
 				operators.push(TokenType.INDEX);
 				tokenizer.match(TokenType.LEFT_BRACKET, true);

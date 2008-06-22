@@ -1,7 +1,8 @@
 package {
 	import flash.display.Sprite;
 	import processing.Processing;
-	import processing.parser.*;
+	import processing.parser.Parser;
+	import processing.parser.statements.IExecutable;
 	import mx.core.ByteArrayAsset;
 	import flash.utils.ByteArray;
 	import flash.external.ExternalInterface;
