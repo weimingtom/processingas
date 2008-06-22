@@ -1,17 +1,17 @@
 package processing.parser
 {	
-	public class EvaluatorContext
+	public class ExecutionContext
 	{
 //[TODO] rename this to Scope class?
-//		public var caller;
-//		public var callee;
 		public var scope:Object = {};
 		public var parent:EvaluatorContext;
 		public var thisObject:Object = null;
+//		public var caller;
+//		public var callee;
 //		public var result = undefined;
 //		public var target = null;
-		
-		public function EvaluatorContext(s:Object = null, p:EvaluatorContext = null, t:Object = null):void
+
+		public function ExecutionContext(s:Object = null, p:EvaluatorContext = null, t:Object = null):void
 		{
 			scope = s || {};
 			parent = p;
