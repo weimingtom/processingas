@@ -1,8 +1,7 @@
 package processing.api {
-	import processing.api.*;
+	import processing.parser.ExecutionContext;
 	import flash.net.navigateToURL;
 	import flash.net.URLRequest;
-	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.display.Shape;
 	import flash.display.CapsStyle;
@@ -11,13 +10,29 @@ package processing.api {
 	import flash.geom.Matrix;
 	import flash.utils.getDefinitionByName;
 
-//[TODO] not dynamic!
-	dynamic public class Context {
-		// processing object
-		private var p:Processing;
+	public class PGraphics {
+		// processing context
+		private var _context:ExecutionContext;
+		public function get context():ExecutionContext { return _context; }
+		
+		// main graphics
+		private var _bitmapData:BitmapData;
+		public function get bitmapData():ExecutionContext { return _bitmapData; }
+		
+		// constructor
+		public function PGraphics(x:ExecutionContext):void {
+			// save execution context
+			_context = x;
+			
+			// create bitmapdata
+			_bitmapData = new BitmapData(1, 1);
+		
+			// initialize state variables
+			start = (new Date).getTime();
+		}
 	
-		// init
-
+		// drawing constants
+		public const P2D = 3;
 		public const P3D = 3;
 		public const CORNER = 0;
 		public const CENTER = 1;
@@ -60,6 +75,7 @@ package processing.api {
 		private var start:Number;
 		
 		// mouse position vars
+//[TODO] move these to PApplet
 		public var pmouseX:Number = 0;
 		public var pmouseY:Number = 0;
 		public var mouseX:Number = 0;
@@ -81,18 +97,6 @@ package processing.api {
 
 		// pixels array
 		public var pixels:Array;
-		
-		// constructor
-		public function Context(_p:Processing):void {
-			// save processing object
-			p = _p;
-		
-			// initialize state variables
-			start = (new Date).getTime();
-			
-			//[TODO] separate this and math functions into proper class
-			this['Math'] = Math;
-		}
 
 		// stroke
 		private var doStroke:Boolean = true;
@@ -128,13 +132,13 @@ package processing.api {
 			shape.graphics.endFill();
 
 			// rasterize and clear shape
-//[TODO] this is here cause of shapeMatrix... fix that later?
+//[TODO] this is here because of shapeMatrix... fix that later?
 			p.sprite.bitmapData.draw(shape, shapeMatrix, null, null, null, doSmooth);
 			shape.graphics.clear();
 		}
 		
 		// color conversion
-//[TODO] should be a color datatype
+//[TODO] should there be a color datatype?
 		public function color(... args):Number {
 			var aColor:Number = 0;
 
@@ -211,12 +215,6 @@ package processing.api {
 			return Math.round(255 * (aValue / range));
 		}
 		
-		// AniSprite class
-//		public var AniSprite:Class = getDefinitionByName('processing.api.AniSprite') as Class;
-		
-		// ArrayList class
-		public var ArrayList:Class = getDefinitionByName('processing.api.ArrayList') as Class;
-		
 		public function createImage( w, h, mode = null ):Object
 		{
 			var data:Object = {
@@ -245,6 +243,7 @@ package processing.api {
 		
 		public function createGraphics( w, h )
 		{
+//[TODO] return new PGraphics object
 /*			var pObj:Processing = new Processing();
 			var ret:Context = pObj.context;
 			ret.size( w, h );
@@ -984,239 +983,5 @@ package processing.api {
 		{
 			return (new Date).getSeconds();
 		}
-
-		//=========================================================
-		// Math
-		//=========================================================
-
-		// Calculation
-
-		public function min( aNumber:Number, aNumber2:Number ):Number
-		{
-			return Math.min( aNumber, aNumber2 );
-		}
-	
-		public function max( aNumber:Number, aNumber2:Number ):Number
-		{
-			return Math.max( aNumber, aNumber2 );
-		}
-
-		public function round( aNumber:Number ):Number
-		{
-			return Math.round( aNumber );
-		}
-
-		public function dist( x1:Number, y1:Number, x2:Number, y2:Number ):Number
-		{
-			return Math.sqrt( Math.pow( x2 - x1, 2 ) + Math.pow( y2 - y1, 2 ) );
-		}
-
-		public function pow( aNumber:Number, aExponent:Number ):Number
-		{
-			return Math.pow( aNumber, aExponent );
-		}
-
-		public function floor( aNumber:Number ):Number
-		{
-			return Math.floor( aNumber );
-		}
-
-		public function sqrt( aNumber:Number ):Number
-		{
-			return Math.sqrt( aNumber );
-		}
-
-		public function abs( aNumber:Number ):Number
-		{
-			return Math.abs( aNumber );
-		}
-
-		public function constrain( aNumber:Number, aMin:Number, aMax:Number ):Number
-		{
-			return Math.min( Math.max( aNumber, aMin ), aMax );
-		}
-
-		public function norm( value:Number, istart:Number, istop:Number ):Number
-		{
-			return map( value, istart, istop, 0, 1 );
-		}
-
-		public function lerp( value1:Number, value2:Number, amt:Number ):Number
-		{
-			return value1 + ((value2 - value1) * amt);
-		}
-
-		public function sq( aNumber:Number ):Number
-		{
-			return Math.pow( aNumber, 2 );
-		}
-	
-		public function ceil( aNumber:Number ):Number
-		{
-			return Math.ceil( aNumber );
-		}
-
-		public function map( value:Number, istart:Number, istop:Number, ostart:Number, ostop:Number ):Number
-		{
-			return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
-		}
-
-		// Trigonometry
-
-		public function tan( aNumber:Number ):Number
-		{
-			return Math.tan( aNumber );
-		}
-
-		public function sin( aNumber:Number ):Number
-		{
-			return Math.sin( aNumber );
-		}
-		
-		public function cos( aNumber:Number ):Number
-		{
-			return Math.cos( aNumber );
-		}
-
-		public function degrees( aAngle:Number ):Number
-		{
-			return ( aAngle / Math.PI ) * 180;
-		}
-
-		public function atan2( aNumber:Number, aNumber2:Number ):Number
-		{
-			return Math.atan2( aNumber, aNumber2 );
-		}
-		
-		public function radians( aAngle:Number ):Number
-		{
-			return ( aAngle / 180 ) * Math.PI;
-		}
-
-		// Random
-
-		// From: http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
-		public function noise( x:Number, y:Number = undefined, z:Number = undefined ):Number
-		{
-			return arguments.length >= 2 ?
-				PerlinNoise_2D( x, y ) :
-				PerlinNoise_2D( x, x );
-		}
-	
-		private function Noise(x, y):Number
-		{
-			var n = x + y * 57;
-			n = (n<<13) ^ n;
-			return Math.abs(1.0 - (((n * ((n * n * 15731) + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0));
-		}
-	
-		private function SmoothedNoise(x, y):Number
-		{
-			var corners = ( Noise(x-1, y-1)+Noise(x+1, y-1)+Noise(x-1, y+1)+Noise(x+1, y+1) ) / 16;
-			var sides	 = ( Noise(x-1, y)	+Noise(x+1, y)	+Noise(x, y-1)	+Noise(x, y+1) ) /	8;
-			var center	=	Noise(x, y) / 4;
-			return corners + sides + center;
-		}
-	
-		private function InterpolatedNoise(x, y):Number
-		{
-			var integer_X		= Math.floor(x);
-			var fractional_X = x - integer_X;
-	
-			var integer_Y		= Math.floor(y);
-			var fractional_Y = y - integer_Y;
-	
-			var v1 = SmoothedNoise(integer_X,		 integer_Y);
-			var v2 = SmoothedNoise(integer_X + 1, integer_Y);
-			var v3 = SmoothedNoise(integer_X,		 integer_Y + 1);
-			var v4 = SmoothedNoise(integer_X + 1, integer_Y + 1);
-	
-			var i1 = Interpolate(v1 , v2 , fractional_X);
-			var i2 = Interpolate(v3 , v4 , fractional_X);
-	
-			return Interpolate(i1 , i2 , fractional_Y);
-		}
-	
-		private function PerlinNoise_2D(x, y):Number
-		{
-				var total = 0;
-				var p = 0.25;
-				var n = 3;
-	
-				for ( var i = 0; i <= n; i++ )
-				{
-						var frequency = Math.pow(2, i);
-						var amplitude = Math.pow(p, i);
-	
-						total = total + InterpolatedNoise(x * frequency, y * frequency) * amplitude;
-				}
-	
-				return total;
-		}
-	
-		private function Interpolate(a, b, x):Number
-		{
-			var ft = x * Math.PI;
-			var f = (1 - Math.cos(ft)) * .5;
-			return a*(1-f) + b*f;
-		}
-
-		public function randomSeed( aValue )
-		{
-			//[TODO]
-		}
-
-		public function random( aMin, aMax = null ):Number
-		{
-			return arguments.length == 2 ?
-				aMin + (Math.random() * (aMax - aMin)) :
-				Math.random() * aMin;
-		}
-
-		//=========================================================
-		// Constants
-		//=========================================================
-
-		public const HALF_PI:Number = Math.PI / 2;
-		public const TWO_PI:Number = Math.PI * 2;
-		public const PI:Number = Math.PI;
-		
-		                public function extendClass( obj, args, fn )
-                {
-                        if ( arguments.length == 3 )
-                        {
-                                fn.apply( obj, args );
-                        }
-                        else
-                        {
-                                args.call( obj );
-                        }
-                }
-		
-		//=========================================================
-		// TEMPORARY
-		//=========================================================
-        
-                public function addMethod( object, name, fn )
-                {
-                        if ( object[ name ] )
-                        {
-                                var args = fn.length;
-                                
-                                var oldfn = object[ name ];
-                                object[ name ] = function()
-                                {
-                                        if ( arguments.length == args )
-                                                return fn.apply( this, arguments );
-                                        else
-                                                return oldfn.apply( this, arguments );
-                                };
-                        }
-                        else
-                        {
-                                object[ name ] = fn;
-                        }
-                }
-
 	}
 }
