@@ -139,12 +139,12 @@ package processing.api {
 			var aColor:Number = 0;
 
 			// function overrides
-			if (args.length == 1 && args[0] < 256)
+			if (args.length == 1 && args[0] < 256 && args[0] >= 0)
 			{
 				// color(gray)
 				return color( args[0], args[0], args[0], opacityRange );
 			}
-			else if (args.length == 2 && args[0] < 256)
+			else if (args.length == 2 && args[0] < 256 && args[0] >= 0)
 			{
 				// color(gray, alpha)
 				return color( args[0], args[0], args[0], args[1] );
@@ -166,18 +166,17 @@ package processing.api {
 				var r = getColor(colors[0], redRange);
 				var g = getColor(colors[1], greenRange);
 				var b = getColor(colors[2], blueRange);
-
 				return (a << 24) + (r << 16) + (g << 8) + b;
 			}
-			else if ( args.length == 1 && args[0] > 256 )
+			else if ( args.length == 1 )
 			{
 				// color(hex)
-				return color(args[0] >> 16 & 0xFF, args[0] >> 8 & 0xFF, args[0] & 0xFF, args[0] >> 24 & 0xFF);
+				return args[0];
 			}
-			else if ( args.length == 2 && args[0] > 256 )
+			else if ( args.length == 2 )
 			{
 				// color(hex, alpha)
-				return color(args[0] >> 16 & 0xFF, args[0] >> 8 & 0xFF, args[0] & 0xFF, args[1]);
+				return args[0] + (args[1] << 24);
 			}
 			
 			// catch-all

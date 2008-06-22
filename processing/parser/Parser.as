@@ -123,6 +123,22 @@ package processing.parser {
 				else
 					block.push(new Return(undefined));
 				break;
+			
+			    // break
+			    case TokenType.BREAK:
+				tokenizer.get();			
+				// match break and optional level
+				block.push(new Break(tokenizer.match(TokenType.NUMBER) ?
+				    tokenizer.currentToken.value : 1));					
+				break;
+				
+			    // continue
+			    case TokenType.CONTINUE:
+				tokenizer.get();			
+				// match continue and optional level
+				block.push(new Continue(tokenizer.match(TokenType.NUMBER) ?
+				    tokenizer.currentToken.value : 1));					
+				break;
 				
 			    // definition visibility
 			    case TokenType.STATIC:
@@ -166,7 +182,7 @@ package processing.parser {
 				block.push(parseExpression(TokenType.SEMICOLON));
 				break;
 			}
-			
+		tokenizer.peek().debug();
 			// match terminating semicolon
 			if (!tokenizer.match(TokenType.SEMICOLON))
 				throw new TokenizerSyntaxError('Missing ; after statement', tokenizer);

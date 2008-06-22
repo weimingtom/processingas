@@ -15,8 +15,24 @@ package processing.parser.statements
 	
 		public function execute(context:EvaluatorContext):*
 		{
-			while (condition.execute(context))
-				body.execute(context);
+			while (condition.execute(context)) {
+				try {
+					// execute body
+					body.execute(context);
+				} catch (b:Break) {
+					// decrease level and rethrow if necessary
+					if (--b.level)
+						throw b;
+					// else break loop
+					break;
+				} catch (c:Continue) {
+					// decrease level and rethrow if necessary
+					if (--c.level)
+						throw c;
+					// else continue loop
+					continue;
+				}
+			}
 		}
 	}
 }
