@@ -12,7 +12,7 @@ package processing.parser.statements
 			expression = e;
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			// cast value
 //[TODO] actually cast this

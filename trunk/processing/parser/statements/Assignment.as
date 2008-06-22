@@ -13,7 +13,7 @@ package processing.parser.statements
 			value = v;
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			// reduce reference
 			var ref:Array = reference.reduce(context);

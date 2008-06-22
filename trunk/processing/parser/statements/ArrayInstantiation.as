@@ -14,7 +14,7 @@ package processing.parser.statements
 			size = s;
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			// return new ArrayList object
 			return new ArrayList(size.execute(context), 0, 0, type);

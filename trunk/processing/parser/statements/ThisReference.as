@@ -8,10 +8,10 @@ package processing.parser.statements
 		{
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			// climb context inheritance to find defined thisObject
-			for (var c:EvaluatorContext = context;
+			for (var c:ExecutionContext = context;
 			    c && !c.thisObject;
 			    c = c.parent);
 			return c ? c.thisObject : undefined;

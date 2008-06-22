@@ -70,15 +70,15 @@ package processing.parser {
 					else
 						token = new Token(TokenType.IDENTIFIER, match[0]);
 				}
+				else if ((match = /^'(?:[^']|\\.|\\u[0-9A-Fa-f]{4})'/(input)))
+				{
+					// char
+					token = new Token(TokenType.CHAR, parseStringLiteral(match[0].substring(1, match[0].length - 1)).charCodeAt(0));
+				}
 				else if ((match = /^"(?:\\.|[^"])*"|^'(?:[^']|\\.)*'/(input)))
 				{
 					// string
 					token = new Token(TokenType.STRING, parseStringLiteral(match[0].substring(1, match[0].length - 1)));
-				}
-				else if (scanOperand && (match = /^\/((?:\\.|[^\/])+)\/([gimy]*)/(input)))
-				{
-					// regexp
-					token = new Token(TokenType.REGEXP, new RegExp(parseStringLiteral(match[1]), match[2]));
 				}
 				else if ((match = /^(\n|\|\||&&|===?|!==?|<<|<=|>>>?|>=|\+\+|--|[;,?:|^&=<>+\-*\/%!~.[\]{}()])/(input)))
 				{

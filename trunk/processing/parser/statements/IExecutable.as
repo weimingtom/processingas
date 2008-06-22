@@ -4,6 +4,6 @@ package processing.parser.statements
 
 	public interface IExecutable
 	{
-		function execute(context:EvaluatorContext):*;
+		function execute(context:ExecutionContext):*;
 	}
 }

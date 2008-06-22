@@ -12,7 +12,7 @@ package processing.parser.statements
 			args = a;
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			// iterate args statements
 			var parsedArgs:Array = [];

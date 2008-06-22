@@ -15,7 +15,7 @@ package processing.parser.statements
 			elseBlock = e;
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			if (condition.execute(context))
 				thenBlock.execute(context);

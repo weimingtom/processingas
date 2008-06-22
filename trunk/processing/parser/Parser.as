@@ -159,6 +159,7 @@ package processing.parser {
 			    case TokenType.IDENTIFIER:
 			    case TokenType.VOID:
 			    case TokenType.BOOLEAN:
+			    case TokenType.CHAR:
 			    case TokenType.FLOAT:
 			    case TokenType.INT:
 				if (tokenizer.peek(false, 2).match(TokenType.IDENTIFIER) &&
@@ -182,7 +183,7 @@ package processing.parser {
 				block.push(parseExpression(TokenType.SEMICOLON));
 				break;
 			}
-		tokenizer.peek().debug();
+
 			// match terminating semicolon
 			if (!tokenizer.match(TokenType.SEMICOLON))
 				throw new TokenizerSyntaxError('Missing ; after statement', tokenizer);
@@ -197,6 +198,7 @@ package processing.parser {
 			    tokenizer.match(TokenType.INT) ? TokenType.INT :
 			    tokenizer.match(TokenType.FLOAT) ? TokenType.FLOAT :
 			    tokenizer.match(TokenType.BOOLEAN) ? TokenType.BOOLEAN :
+			    tokenizer.match(TokenType.CHAR) ? TokenType.CHAR :
 			    tokenizer.match(TokenType.VOID) ? TokenType.VOID :
 			    tokenizer.peek(false, 2).match(TokenType.IDENTIFIER) ? tokenizer.get().value :
 			    TokenType.CONSTRUCTOR;
@@ -270,6 +272,7 @@ package processing.parser {
 				    // variable or function
 				    case TokenType.IDENTIFIER:
 				    case TokenType.VOID:
+				    case TokenType.CHAR:
 				    case TokenType.BOOLEAN:
 				    case TokenType.FLOAT:
 				    case TokenType.INT:
@@ -442,7 +445,7 @@ package processing.parser {
 			    case TokenType.FALSE:
 			    case TokenType.NUMBER:
 			    case TokenType.STRING:
-			    case TokenType.REGEXP:
+			    case TokenType.CHAR:
 				// push literal
 				tokenizer.get();
 				operands.push(new Literal(token.value));

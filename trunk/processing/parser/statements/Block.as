@@ -18,7 +18,7 @@ package processing.parser.statements
 			return length;
 		}
 
-		public function execute(context:EvaluatorContext)
+		public function execute(context:ExecutionContext)
 		{
 			// iterate block
 			var retValue:*;

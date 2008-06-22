@@ -10,7 +10,7 @@ package processing.parser.statements
 			level = l;
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			// throw exception
 			throw new Continue(level);

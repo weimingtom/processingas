@@ -16,7 +16,7 @@ package processing.parser.statements
 			privateBody = pr;
 		}
 		
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			// create class constructor
 			context.scope[identifier] = function (... args)
@@ -26,8 +26,8 @@ package processing.parser.statements
 			
 				// create new evaluator contexts
 //[TODO] really this should modify .prototype...
-				var objContext:EvaluatorContext = new EvaluatorContext(this, context, this);
-				var classContext:EvaluatorContext = new EvaluatorContext({}, objContext);
+				var objContext:ExecutionContext = new ExecutionContext(this, context, this);
+				var classContext:ExecutionContext = new ExecutionContext({}, objContext);
 				
 				// define variables
 				publicBody.execute(objContext);
