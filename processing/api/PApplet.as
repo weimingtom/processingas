@@ -21,7 +21,6 @@
 				Math: PMath,
 				ArrayList: ArrayList,
 				AniSprite: AniSprite,
-				trace: trace,
 				pmouseX: 0,
 				pmouseY: 0,
 				mouseX: 0,

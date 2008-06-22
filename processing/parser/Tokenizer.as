@@ -52,6 +52,11 @@ package processing.parser {
 					// end
 					token = new Token(TokenType.END);
 				}
+				else if ((match = /^(?:0[xX]|#)([\da-fA-F]{6}|[\da-fA-F]{8})/(input)))
+				{
+					// color
+					token = new Token(TokenType.NUMBER, parseInt('0x' + match[1]) + (match[1].length == 6 ? 0xFF000000 : 0));
+				}
 				else if ((match = /^\d+(?:\.\d*)?[fF]|^\d+\.\d*(?:[eE][-+]?\d+)?|^\d+(?:\.\d*)?[eE][-+]?\d+|^\.\d+(?:[eE][-+]?\d+)?/(input)))
 				{
 					// float
