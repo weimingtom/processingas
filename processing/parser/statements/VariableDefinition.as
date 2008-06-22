@@ -17,7 +17,8 @@ package processing.parser.statements
 		public function execute(context:EvaluatorContext):*
 		{
 //[TODO] do something with type/array
-			context.scope[identifier] = undefined;
+			// define variable (by default, 0)
+			context.scope[identifier] = 0;
 		}
 	}
 }
