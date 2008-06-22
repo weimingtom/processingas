@@ -15,8 +15,15 @@ package processing.parser.statements
 		public function execute(context:ExecutionContext):*
 		{
 			// cast value
-//[TODO] actually cast this
-			return expression.execute(context);
+			var value:* = expression.execute(context);
+			switch (type) {
+			    case TokenType.INT:		return int(value);
+			    case TokenType.FLOAT:	return Number(value);
+			    case TokenType.BOOLEAN:	return Boolean(value);
+			    case TokenType.CHAR:	return value is String ? value.charCodeAt(0) : value;
+//[TODO] cast objects? arrays?
+			    default:			return value;
+			}
 		}
 	}
 }

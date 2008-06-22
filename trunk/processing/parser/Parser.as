@@ -451,26 +451,41 @@ package processing.parser {
 				operands.push(new Literal(token.value));
 				break;
 				
-			    // array definition
+			    // function cast/array definition
 			    case TokenType.BOOLEAN:
 			    case TokenType.FLOAT:
 			    case TokenType.INT:
+			    case TokenType.CHAR:
 				tokenizer.get();
 //[TODO] support class arrays!
 //[TODO] can this be folded into reduce()?
 				// check for new operator
-				if (operators[operators.length - 1] != TokenType.NEW)
-					throw new TokenizerSyntaxError('Invalid type declaration', tokenizer);
-				// get array initialization
-				tokenizer.match(TokenType.LEFT_BRACKET, true);
-				var size:* = parseExpression(TokenType.RIGHT_BRACKET);
+				if (operators[operators.length - 1] == TokenType.NEW)
+				{
+					// get array initialization
+					tokenizer.match(TokenType.LEFT_BRACKET, true);
+					var size:* = parseExpression(TokenType.RIGHT_BRACKET);
 //[TODO] support multi-dimensional arrays
-				tokenizer.match(TokenType.RIGHT_BRACKET, true);
+					tokenizer.match(TokenType.RIGHT_BRACKET, true);
 				
-				// create array initializer
-				operators.pop();
-				operands.push(new ArrayInstantiation(token.type, size));
-			        break;
+					// create array initializer
+					operators.pop();
+					operands.push(new ArrayInstantiation(token.type, size));
+					break;
+				}
+				else if (tokenizer.match(TokenType.LEFT_PAREN))
+				{
+					// push casting operator
+					operators.push(TokenType.CAST);
+					// push operands
+					operands.push(token.type);
+					operands.push(parseExpression(TokenType.RIGHT_PAREN));
+					tokenizer.match(TokenType.RIGHT_PAREN, true);
+					break;
+				}
+
+				// invalid use of type keyword
+				throw new TokenizerSyntaxError('Invalid type declaration', tokenizer);
 			
 			    // cast/group
 			    case TokenType.LEFT_PAREN:
