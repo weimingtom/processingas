@@ -25,14 +25,15 @@ package processing.api {
 			if ( arguments.length == 0 || arguments.length == 4 )
 			{
 				// normalize dimensions
-				w = w === undefined ? width : w;
-				h = h === undefined ? height : h;
+				if (arguments.length == 0) {
+					w = width;
+					h = height;
+				}
 
 				// create new image
 				var img:PImage = new PImage(w, h);
 				// copy bitmapData
 				img.bitmapData.copyPixels(bitmapData, new Rectangle(x, y, w, h), new Point(0, 0));
-				img.loadPixels();
 				return img;
 			}
 			else if ( arguments.length == 2 )

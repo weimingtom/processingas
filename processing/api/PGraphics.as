@@ -24,7 +24,7 @@ package processing.api {
 			applet = a;
 
 			// initialize state variables
-			start = millis();
+			start = (new Date).getTime();
 		}
 	
 		// drawing constants
