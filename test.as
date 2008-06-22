@@ -1,8 +1,7 @@
 package {
 	import flash.display.Sprite;
-	import processing.api.*;
+	import processing.Processing;
 	import processing.parser.*;
-	import processing.parser.statements.IExecutable;
 	import mx.core.ByteArrayAsset;
 	import flash.utils.ByteArray;
 	import flash.external.ExternalInterface;
@@ -22,7 +21,7 @@ package {
 
 			// create processing object
 			var p:Processing = new Processing();
-			addChild(p.sprite);
+			addChild(p.applet);
 			
 			// evaluate code
 			p.evaluate(processingText);

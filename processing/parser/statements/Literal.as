@@ -10,7 +10,7 @@ package processing.parser.statements
 			value = v;
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			// return literal
 			return value;

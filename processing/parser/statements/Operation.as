@@ -15,20 +15,12 @@ package processing.parser.statements
 			rightOperand = r;
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			// evaluate operands
 			var a:* = leftOperand.execute(context);
 			if (rightOperand)
-				var b:* = rightOperand.execute(context)
-				
-			// check for chars-as-bytes
-			if (type != TokenType.PLUS) {
-				if (a is Number && b is String && b.length == 1)
-					b = b is String ? b.charCodeAt(0) : b;
-				else if (b is Number && a is String && a.length == 1)
-					a = a is String ? a.charCodeAt(0) : a;
-			}
+				var b:* = rightOperand.execute(context);
 
 			// evaluate operation
 			switch (type) {

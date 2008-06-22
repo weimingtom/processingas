@@ -14,7 +14,7 @@ package processing.parser.statements
 			isArray = a;
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 //[TODO] do something with type/array
 			// define variable (by default, 0)

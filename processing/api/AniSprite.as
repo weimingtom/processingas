@@ -2,6 +2,7 @@ package processing.api {
 	import processing.api.*;
 
 	public class AniSprite {
+/*[TODO]
 		public var images:Array = [];
 		public var pos:Number = 0;
 		
@@ -40,6 +41,6 @@ package processing.api {
 		public function getHeight():Number
 		{
 			return context.getImage(this.images[0]).height;
-		}
+		}*/
 	}
 }

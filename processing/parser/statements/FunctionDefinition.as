@@ -16,7 +16,7 @@ package processing.parser.statements
 			body = b;
 		}
 		
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			// check that a variable is not already defined
 //[TODO] this shouldn't have " || !context.scope[identifier]"; must remove predefined .setup from Processing API context!
@@ -52,7 +52,7 @@ package processing.parser.statements
 				// check that this be called as a function
 //[TODO] that
 				// create new evaluator context
-				var funcContext:EvaluatorContext = new EvaluatorContext({}, context);
+				var funcContext:ExecutionContext = new ExecutionContext({}, context);
 
 				// parse args
 				for (var i in args)

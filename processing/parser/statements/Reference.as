@@ -13,7 +13,7 @@ package processing.parser.statements
 			base = b;
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			// get simplified reference
 			var ref:Array = reduce(context);
@@ -22,7 +22,7 @@ package processing.parser.statements
 		}
 		
 		// reduce to [identifier, base] array pair for assignments
-		public function reduce(context:EvaluatorContext):Array
+		public function reduce(context:ExecutionContext):Array
 		{
 			// evaluate identifier
 			var identifier:String = this.identifier.execute(context);
@@ -35,7 +35,7 @@ package processing.parser.statements
 			else
 			{
 				// climb context inheritance to find declared identifier
-				for (var c:EvaluatorContext = context;
+				for (var c:ExecutionContext = context;
 				    c && !c.scope.hasOwnProperty(identifier);
 				    c = c.parent);
 				if (!c)

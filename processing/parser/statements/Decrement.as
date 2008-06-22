@@ -10,7 +10,7 @@ package processing.parser.statements
 			reference = r;
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			// get simplified reference
 			var ref:Array = reference.reduce(context);

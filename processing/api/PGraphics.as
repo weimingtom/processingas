@@ -9,26 +9,21 @@ package processing.api {
 	import flash.geom.Rectangle;
 	import flash.geom.Matrix;
 	import flash.utils.getDefinitionByName;
+	import flash.events.Event;
 
-	public class PGraphics {
-		// processing context
-		private var _context:ExecutionContext;
-		public function get context():ExecutionContext { return _context; }
-		
-		// main graphics
-		private var _bitmapData:BitmapData;
-		public function get bitmapData():ExecutionContext { return _bitmapData; }
+	public class PGraphics extends PImage {
+		// applet object
+		public var applet:PApplet;
 		
 		// constructor
-		public function PGraphics(x:ExecutionContext):void {
-			// save execution context
-			_context = x;
-			
-			// create bitmapdata
-			_bitmapData = new BitmapData(1, 1);
-		
+		public function PGraphics(w:int, h:int, a:PApplet = null):void {			
+			// call super
+			super(w, h);
+			// save applet reference
+			applet = a;
+
 			// initialize state variables
-			start = (new Date).getTime();
+			start = millis();
 		}
 	
 		// drawing constants
@@ -53,7 +48,6 @@ package processing.api {
 		private var curRectMode:Number = CORNER;
 		private var curEllipseMode:Number = CENTER;
 		private var curBackground:*;
-		private var curFrameRate:Number = 60;
 		private var curShape:Number = POLYGON;
 		private var curShapeCount:Number = 0;
 		private var opacityRange:Number = 255;
@@ -72,31 +66,6 @@ package processing.api {
 		private var curTextSize:Number = 12;
 		private var curTextFont:String = 'Arial';
 		private var getLoaded;
-		private var start:Number;
-		
-		// mouse position vars
-//[TODO] move these to PApplet
-		public var pmouseX:Number = 0;
-		public var pmouseY:Number = 0;
-		public var mouseX:Number = 0;
-		public var mouseY:Number = 0;
-		
-		// user-replacable functions
-		public var mouseDragged:Function = undefined;
-		public var mouseMoved:Function = undefined;
-//?		public var mousePressed:Function = undefined;
-		public var mouseReleased:Function = undefined;
-//?		public var keyPressed:Function = undefined;
-		public var keyReleased:Function = undefined;
-		public var draw:Function = undefined;
-		public var setup:Function = undefined;
-		
-		// canvas width/height
-		public function get width():Number { return p.sprite.bitmapData.width; }
-		public function get height():Number { return p.sprite.bitmapData.height; }
-
-		// pixels array
-		public var pixels:Array;
 
 		// stroke
 		private var doStroke:Boolean = true;
@@ -133,7 +102,7 @@ package processing.api {
 
 			// rasterize and clear shape
 //[TODO] this is here because of shapeMatrix... fix that later?
-			p.sprite.bitmapData.draw(shape, shapeMatrix, null, null, null, doSmooth);
+			bitmapData.draw(shape, shapeMatrix, null, null, null, doSmooth);
 			shape.graphics.clear();
 		}
 		
@@ -215,39 +184,17 @@ package processing.api {
 			return Math.round(255 * (aValue / range));
 		}
 		
-		public function createImage( w, h, mode = null ):Object
+		public function createImage( w:int, h:int, mode = null ):PImage
 		{
-			var data:Object = {
-				width: w,
-				height: h,
-				pixels: new Array( w * h ),
-				get: function(x,y)
-				{
-					return this.pixels[w*y+x];
-				},
-				_mask: null,
-				mask: function(img)
-				{
-					this._mask = img;
-				},
-				loadPixels: function()
-				{
-				},
-				updatePixels: function()
-				{
-				}
-			};
-			
-			return data;
+			var img:PImage = new PImage(w, h);
+			img.loadPixels();
+			return img;
 		}
 		
-		public function createGraphics( w, h )
+		public function createGraphics( w:int, h:int, type:int = P2D ):PGraphics
 		{
-//[TODO] return new PGraphics object
-/*			var pObj:Processing = new Processing();
-			var ret:Context = pObj.context;
-			ret.size( w, h );
-			return ret;*/
+//[TODO] what about type?
+			return new PGraphics(w, h);
 		}
 
 		public function tint( rgb:Number, a:Number ):void
@@ -287,50 +234,28 @@ package processing.api {
 			return canvas;*/
 		}
 			
-		public function image( img, x, y, w = null, h = null )
+		public function image( img:PImage, x:int = 0, y:int = 0, w:int = undefined, h:int = undefined )
 		{
-/*			x = x || 0;
-			y = y || 0;
+			// create transformaton matrix
+			var matrix:Matrix = new Matrix();
+			// translation
+			matrix.translate(x, y);
+			// scaling
+			if (arguments.length == 5)
+				matrix.scale(w/img.width, h/img.height);
 	
-			var obj = getImage(img);
+			// resync image
+			img.updatePixels();
+			// draw image
+			bitmapData.draw(img.bitmapData, matrix);
 	
-			if ( curTint >= 0 )
-			{
-				var oldAlpha = curContext.globalAlpha;
-				curContext.globalAlpha = curTint / opacityRange;
-			}
-	
-			if ( arguments.length == 3 )
-			{
-				curContext.drawImage( obj, x, y );
-			}
-			else
-			{
-				curContext.drawImage( obj, x, y, w, h );
-			}
-	
-			if ( curTint >= 0 )
-			{
-				curContext.globalAlpha = oldAlpha;
-			}
-	
-			if ( img._mask )
+/*			if ( img._mask )
 			{
 				var oldComposite = curContext.globalCompositeOperation;
 				curContext.globalCompositeOperation = "darker";
 				image( img._mask, x, y );
 				curContext.globalCompositeOperation = oldComposite;
 			}*/
-		}
-	
-		public function exit()
-		{
-	
-		}
-	
-		public function save( file )
-		{
-	
 		}
 	
 		public function loadImage( file )
@@ -407,15 +332,9 @@ package processing.api {
 			}*/
 		}
 	
-		public function char( key )
-		{
-			//return String.fromCharCode( key );
-			return key;
-		}
-	
 		public function println()
 		{
-	
+//[TODO] er
 		}
 		
 		public function colorMode( mode:Number, range1:Number = undefined, range2:Number = undefined, range3:Number = undefined, range4:Number = undefined ):void
@@ -553,10 +472,8 @@ package processing.api {
 		
 		}
 
-//[TODO] see effects order has on matrix!
 		public function translate( x:Number, y:Number ):void
 		{
-			// apply matrix transformations
 			var newMatrix = new Matrix();
 			newMatrix.translate(x, y);
 			newMatrix.concat(shapeMatrix);
@@ -565,12 +482,14 @@ package processing.api {
 		
 		public function scale( x:Number, y:Number = undefined ):void
 		{
-			shapeMatrix.scale(x, y == undefined ? x : y);
+			var newMatrix = new Matrix();
+			newMatrix.scale(x, y == undefined ? x : y);
+			newMatrix.concat(shapeMatrix);
+			shapeMatrix = newMatrix;
 		}
 		
 		public function rotate( aAngle:Number ):void
 		{
-			// apply matrix transformations
 			var newMatrix = new Matrix();
 			newMatrix.rotate(aAngle);
 			newMatrix.concat(shapeMatrix);
@@ -591,17 +510,11 @@ package processing.api {
 		
 		public function redraw()
 		{
-			beginDraw()
-			pushMatrix();
-			draw();
-			popMatrix();
-			endDraw();
+//[TODO] what should we do here?
 		}
 		
 		public function beginDraw()
 		{
-			p.inDraw = true;
-			
 			// clear graphics and reset background
 			if ( hasBackground )
 			{
@@ -611,12 +524,7 @@ package processing.api {
 		
 		public function endDraw()
 		{
-			p.inDraw = false;
-		}
-		
-		public function loop()
-		{
-			p.loop = false;
+//[TODO] rasterize shape
 		}
 		
 		public function background( img = null )
@@ -642,7 +550,7 @@ package processing.api {
 			else
 			{
 				// set background color
-				p.sprite.bitmapData.fillRect(new Rectangle(0, 0, width, height), curBackground);
+				bitmapData.fillRect(new Rectangle(0, 0, width, height), curBackground);
 			}
 		}
 	
@@ -679,18 +587,15 @@ package processing.api {
 		public function smooth():void
 		{
 			doSmooth = true;
-			p.sprite.stage.quality = StageQuality.HIGH;
+			if (applet)
+				applet.stage.quality = StageQuality.HIGH;
 		}
 
 		public function noSmooth():void
 		{
 			doSmooth = false;
-			p.sprite.stage.quality = StageQuality.LOW;
-		}
-		
-		public function noLoop()
-		{
-			p.loop = false;
+			if (applet)
+				applet.stage.quality = StageQuality.LOW;
 		}
 		
 		public function fill( ... args ):void
@@ -712,34 +617,9 @@ package processing.api {
 		
 		public function point( x:Number, y:Number ):void
 		{
-			p.sprite.bitmapData.setPixel32(x, y, curStrokeColor);
+			bitmapData.setPixel32(x, y, curStrokeColor);
 		}
-	
-/*		public function get( x, y )
-		{
-			if ( arguments.length == 0 )
-			{
-				var c = createGraphics( width, height );
-				c.image( curContext, 0, 0 );
-				return c;
-			}
-	
-			if ( !getLoaded )
-			{
-				getLoaded = buildImageObject( curContext.getImageData(0, 0, width, height) );
-			}
-	
-			return getLoaded.get( x, y );
-		}
-	
-		public function set( x, y, color )
-		{
-			var oldFill = curContext.fillStyle;
-			curContext.fillStyle = color;
-			curContext.fillRect( Math.round( x ), Math.round( y ), 1, 1 );
-			curContext.fillStyle = oldFill;
-		}
-		
+/*
 		public function arc( x, y, width, height, start, stop )
 		{
 			if ( width <= 0 )
@@ -853,94 +733,49 @@ package processing.api {
 			endShapeDrawing();
 		}
 
-		public function link( href:String, target ):void
-		{
-			var request:URLRequest;
-			request = new URLRequest(href);
-			navigateToURL(request);
-		}
-	
-/*		public function loadPixels()
-		{
-			pixels = buildImageObject( curContext.getImageData(0, 0, width, height) ).pixels;
-		}
-	
-		public function updatePixels()
-		{
-			var colors = new RegExp('(\d+),(\d+),(\d+),(\d+)');
-			var data = [];
-			var pos = 0;
-	
-			for ( var i = 0, l = pixels.length; i < l; i++ ) {
-				var c = (pixels[i] || "rgba(0,0,0,1)").match(colors);
-				data[pos] = parseInt(c[1]);
-				data[pos+1] = parseInt(c[2]);
-				data[pos+2] = parseInt(c[3]);
-				data[pos+3] = parseFloat(c[4]) * 100;
-				pos += 4;
-			}
-	
-			curContext.putImageData(new ImageData(width, height, data), 0, 0);
-		}
-		
-		private function buildImageObject(obj:ImageData) {
-			var pixels = obj.data;
-			var data = this.createImage( obj.width, obj.height );
-			
-			if ( data.__defineGetter__ && data.__lookupGetter__ && !data.__lookupGetter__("pixels") ) {
-				var pixelsDone;
-				data.__defineGetter__("pixels", function () {
-					if ( pixelsDone )
-						return pixelsDone;
-					pixelsDone = [];
-			
-					for ( var i = 0; i < pixels.length; i += 4 )
-						pixelsDone.push(this.color(pixels[i], pixels[i+1], pixels[i+2], pixels[i+3]) );
-			
-					return pixelsDone;	
-				});
-			} else {
-				data.pixels = [];
-			
-				for ( var i = 0; i < pixels.length; i += 4 )
-					data.pixels.push(this.color(pixels[i], pixels[i+1], pixels[i+2], pixels[i+3]) );
-			}
-
-			return data;
-		}*/
-
-		public function int( aNumber )
-		{
-			return Math.floor( aNumber );
-		}
-	
-		public function float( aNumber )
-		{
-			return typeof aNumber == "string" ?
-			    float( aNumber.charCodeAt(0) ) :
-			    parseFloat( aNumber );
-		}
-	
-		public function byte( aNumber )
-		{
-			return aNumber || 0;
-		}
-
 		//=========================================================
 		// Environment
 		//=========================================================
 
 		public function frameRate( aRate:Number ):void
 		{
-			p.sprite.stage.frameRate = aRate;
-//[TODO] eliminate stored frameRate
-			curFrameRate = aRate;
+			if (applet)
+				applet.stage.frameRate = aRate;
 		}
 
 		public function size( aWidth:Number, aHeight:Number ):void
 		{
 			// change image size (no need to preserve data)
-			p.sprite.bitmapData = new BitmapData( aWidth, aHeight);
+			bitmapData = new BitmapData( aWidth, aHeight);
+			if (applet)
+				applet.bitmapData = bitmapData;
+		}
+
+//[TODO] these might have to be moved out of this class
+		public function loop()
+		{
+			if (applet)
+				applet.enableLoop = true;
+		}
+		
+		public function noLoop()
+		{
+			if (applet)
+				applet.enableLoop = false;
+		}
+
+		public function link( href:String, target ):void
+		{
+			var request:URLRequest;
+			request = new URLRequest(href);
+			navigateToURL(request);
+		}
+
+		public function exit()
+		{
+			// stop applet
+			if (applet)
+				applet.stop();
 		}
 
 		//=========================================================
@@ -948,6 +783,8 @@ package processing.api {
 		//=========================================================
 
 		// Time & Date
+
+		private var start:Number;
 
 		public function hour():Number
 		{

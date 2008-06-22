@@ -214,18 +214,21 @@ package processing.parser {
 		public static const TRY:TokenType = new TokenType();
 		public static const TYPEOF:TokenType = new TokenType('typeof', 14, 1);
 		public static const VAR:TokenType = new TokenType();
-		public static const VOID:TokenType = new TokenType('void', 14, 1);
 		public static const WHILE:TokenType = new TokenType();
 		public static const WITH:TokenType = new TokenType();
 		
+		// variable types
+		public static const VOID:TokenType = new TokenType('void');
 		public static const BOOLEAN:TokenType = new TokenType('boolean');
 		public static const FLOAT:TokenType = new TokenType('float');
 		public static const INT:TokenType = new TokenType('int');
+		public static const CHAR:TokenType = new TokenType('char');
 
 // can trip on KEYWORDS[toString]...!
 		public static const KEYWORDS:Object = {
 			'boolean':	BOOLEAN,
 			'break':	BREAK,
+			'char':		CHAR,
 			'class':	CLASS,
 			'case':		CASE,
 			'catch':	CATCH,

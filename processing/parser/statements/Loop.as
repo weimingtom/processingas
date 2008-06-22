@@ -13,7 +13,7 @@ package processing.parser.statements
 			body = b;
 		}
 	
-		public function execute(context:EvaluatorContext):*
+		public function execute(context:ExecutionContext):*
 		{
 			while (condition.execute(context)) {
 				try {
