@@ -3,38 +3,37 @@ package processing.api
 	dynamic public class ArrayList extends Array {
 		private var _type:*;
 	
-		public function ArrayList( size1:int = 0, size2:int = 0, size3:int = 0, type:* = null ):void
+		public function ArrayList( size1:int = 0, size2:int = undefined, size3:int = undefined, type:* = null ):void
 		{
-			// initialize array
-			super( size1 );
-			
-			if ( size2 )
-			{
-				for ( var i = 0; i < size; i++ )
-				{
-					this[i] = [];
+			// preserve type
+//[TODO] do something with type!
+			_type = type;
 	
+			// first dimension
+			for ( var i = 0; i < size1; i++ )
+			{
+				this[i] = 0;
+				
+				// second dimension
+				if ( size2 )
+				{
+					this[i] = [];			
 					for ( var j = 0; j < size2; j++ )
 					{
-						var a = this[i][j] = size3 ? new Array( size3 ) : 0;
-						for ( var k = 0; k < size3; k++ )
+						this[i][j] = 0;
+		
+						// third dimension
+						if ( size3 )
 						{
-							a[k] = 0;
+							this[i][j] = [];
+							for ( var k = 0; k < size3; k++ )
+							{
+								this[i][j][k] = 0;
+							}
 						}
 					}
 				}
 			}
-			else
-			{
-				for ( var i = 0; i < size1; i++ )
-				{
-					this[i] = 0;
-				}
-			}
-			
-			// preserve type
-			_type = type;
-	//[TODO] do something with type!
 		}
 		
 		public function size():int
