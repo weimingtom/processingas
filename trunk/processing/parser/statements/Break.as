@@ -2,11 +2,13 @@ package processing.parser.statements
 {
 	import processing.parser.*;
 
-	public class Break implements IExecutable
+	public class Break extends Error implements IExecutable
 	{
 		public var level:int = 1;
 	
 		public function Break(l:int = 1) {
+			super('Invalid break');
+		
 			level = l;
 		}
 	

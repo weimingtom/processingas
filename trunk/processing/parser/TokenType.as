@@ -78,6 +78,7 @@ package processing.parser {
 		
 		// terminals
 		public static const IDENTIFIER:TokenType = new TokenType('IDENTIFIER');
+		public static const TYPE:TokenType = new TokenType('TYPE');
 		public static const NUMBER:TokenType = new TokenType('NUMBER');
 		public static const STRING:TokenType = new TokenType('STRING');
 		public static const REGEXP:TokenType = new TokenType('REGEXP');
@@ -217,18 +218,9 @@ package processing.parser {
 		public static const WHILE:TokenType = new TokenType();
 		public static const WITH:TokenType = new TokenType();
 		
-		// variable types
-		public static const VOID:TokenType = new TokenType('void');
-		public static const BOOLEAN:TokenType = new TokenType('boolean');
-		public static const FLOAT:TokenType = new TokenType('float');
-		public static const INT:TokenType = new TokenType('int');
-		public static const CHAR:TokenType = new TokenType('char');
-
 // can trip on KEYWORDS[toString]...!
 		public static const KEYWORDS:Object = {
-			'boolean':	BOOLEAN,
 			'break':	BREAK,
-			'char':		CHAR,
 			'class':	CLASS,
 			'case':		CASE,
 			'catch':	CATCH,
@@ -260,10 +252,21 @@ package processing.parser {
 			'try':		TRY,
 			'typeof':	TYPEOF,
 			'var':		VAR,
-			'void':		VOID,
 			'while':	WHILE,
-			'with':		WITH,
-			
+			'with':		WITH
+		    };
+		    
+		// variable types
+		public static const VOID:TokenType = new TokenType('void');
+		public static const BOOLEAN:TokenType = new TokenType('boolean');
+		public static const FLOAT:TokenType = new TokenType('float');
+		public static const INT:TokenType = new TokenType('int');
+		public static const CHAR:TokenType = new TokenType('char');
+		    
+		public static const TYPES:Object = {
+			'boolean':	BOOLEAN,
+			'char':		CHAR,
+			'void':		VOID,			
 			'float':	FLOAT,
 			'int':		INT
 		    };
