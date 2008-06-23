@@ -2,8 +2,10 @@ package processing.api {
 	import flash.display.BitmapData;
 	import flash.geom.Rectangle;
 	import flash.geom.Point;
+	import flash.events.Event;
+	import flash.events.EventDispatcher;
 
-	public class PImage {
+	public class PImage extends EventDispatcher {
 		// graphics data
 		public var bitmapData:BitmapData;
 

@@ -2,6 +2,8 @@
 	import processing.api.PApplet;
 	import processing.parser.Parser;
 	import processing.parser.statements.IExecutable;
+	import flash.display.Loader;
+	import flash.events.Event;
 
 	public class Processing {
 		public var applet:PApplet;

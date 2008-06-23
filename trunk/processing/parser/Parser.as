@@ -151,9 +151,10 @@ package processing.parser {
 			    case TokenType.TYPE:
 			    case TokenType.IDENTIFIER:
 				// resolve ambiguous identifier
-				if (tokenizer.peek(2).match(TokenType.IDENTIFIER)) {
+				var isArray:Boolean = tokenizer.peek(2).match(TokenType.ARRAY_DIMENSION);
+				if (tokenizer.peek(2 + isArray).match(TokenType.IDENTIFIER)) {
 					// get parsed function
-					if (tokenizer.peek(3).match(TokenType.LEFT_PAREN))
+					if (tokenizer.peek(3 + isArray).match(TokenType.LEFT_PAREN))
 						return new Block(parseFunction());
 						
 					// else, get variable list
@@ -177,18 +178,18 @@ package processing.parser {
 		
 		private function parseType():Type {
 			// try and match a type declaration
-			if (tokenizer.match(TokenType.TYPE))
-				return tokenizer.currentToken.value;
-			if (tokenizer.match(TokenType.IDENTIFIER))
-				return new Type(tokenizer.currentToken.value);
-
-			// could not match type
-			return null;
+			if (!tokenizer.match(TokenType.TYPE) && !tokenizer.match(TokenType.IDENTIFIER))
+				return null;
+				
+			// return type declaration
+			var type:* = tokenizer.currentToken.value;
+			var dimensions:int = tokenizer.match(TokenType.ARRAY_DIMENSION) ? tokenizer.currentToken.value : 0;
+			return new Type(type, dimensions);
 		}
 		
 		private function parseFunction():FunctionDefinition {
-			// get function type
-			if (tokenizer.peek(2).match(TokenType.IDENTIFIER))
+			// get function type (if not constructor)
+			if (!tokenizer.peek(2).match(TokenType.LEFT_PAREN))
 				var funcType:Type = parseType();
 			// get function name
 			tokenizer.match(TokenType.IDENTIFIER, true);
@@ -252,7 +253,7 @@ package processing.parser {
 				    // variable or function
 				    case TokenType.IDENTIFIER:
 					// check for constructor
-					if (token.value == className)
+					if (token.value == className && tokenizer.peek(2).match(TokenType.LEFT_PAREN))
 					{
 						// get type-less constructors
 						constructor.push(parseFunction());
@@ -261,7 +262,8 @@ package processing.parser {
 					// class type; fall-through
 					
 				    case TokenType.TYPE:
-					if (tokenizer.peek(2).match(TokenType.IDENTIFIER))
+					if (tokenizer.peek(2).match(TokenType.IDENTIFIER) ||
+					    tokenizer.peek(2).match(TokenType.ARRAY_DIMENSION))
 					{
 						// parse definition
 						block.append(parseStatement());
@@ -282,7 +284,7 @@ package processing.parser {
 		private function parseVariables():Block
 		{
 			// get main variable type
-			var varType = parseType();
+			var declarationType:Type = parseType();
 			// get variable list
 			var block:Block = new Block();
 			do {
@@ -290,12 +292,10 @@ package processing.parser {
 				tokenizer.match(TokenType.IDENTIFIER, true);
 				var varName:String = tokenizer.currentToken.value;
 				// check for per-variable array brackets
-				var dimensions = 
-				    (tokenizer.match(TokenType.LEFT_BRACKET) && tokenizer.match(TokenType.RIGHT_BRACKET, true)) +
-				    (tokenizer.match(TokenType.LEFT_BRACKET) && tokenizer.match(TokenType.RIGHT_BRACKET, true)) +
-				    (tokenizer.match(TokenType.LEFT_BRACKET) && tokenizer.match(TokenType.RIGHT_BRACKET, true));
+				var varDimensions:int = tokenizer.match(TokenType.ARRAY_DIMENSION) ?
+				    tokenizer.currentToken.value : declarationType.dimensions;
 				// add definition
-				block.push(new VariableDefinition(varName, new Type(varType.type, dimensions ? dimensions : varType.dimensions)));
+				block.push(new VariableDefinition(varName, new Type(declarationType.type, varDimensions)));
 				
 				// check for assignment operation
 				if (tokenizer.match(TokenType.ASSIGN))
@@ -381,14 +381,14 @@ package processing.parser {
 				
 			    // function casting
 			    case TokenType.TYPE:
-				if (tokenizer.peek(2).match(TokenType.LEFT_PAREN))
+				var isArray:Boolean = tokenizer.peek(2).match(TokenType.ARRAY_DIMENSION);
+				if (tokenizer.peek(2 + isArray).match(TokenType.LEFT_PAREN))
 				{
 					// push casting operator
-					tokenizer.get();
 					operators.push(TokenType.CAST);
 					// push operands
+					operands.push(parseType());
 					tokenizer.match(TokenType.LEFT_PAREN, true);
-					operands.push(token.value);
 					operands.push(parseExpression(TokenType.RIGHT_PAREN));
 					tokenizer.match(TokenType.RIGHT_PAREN, true);
 					break;
@@ -397,11 +397,12 @@ package processing.parser {
 			    
 			    // array initialization/references
 			    case TokenType.IDENTIFIER:
-				tokenizer.get();
 //[TODO] move this into NEW operator?
 				// check for new operator
 				if (operators[operators.length - 1] == TokenType.NEW &&
-				    tokenizer.peek().match(TokenType.LEFT_BRACKET)) {
+				    tokenizer.peek(2).match(TokenType.LEFT_BRACKET)) {
+					// get type
+					var type:Type = parseType();
 					// get array initialization
 					for (var sizes:Array = [], dimensions:int = 0; dimensions < 3; dimensions++) {
 						// match an array dimension
@@ -414,14 +415,16 @@ package processing.parser {
 
 					// create array initializer
 					operators.pop();
-					operands.push(new ArrayInstantiation(token.value, sizes[0], sizes[1], sizes[2]));
-				} else if (token.match(TokenType.IDENTIFIER)) {
-					// push reference
-					operands.push(new Reference(new Literal(token.value)));
-				} else {
+					operands.push(new ArrayInstantiation(type, sizes[0], sizes[1], sizes[2]));
+					break;
+				} else if (!token.match(TokenType.IDENTIFIER)) {
 					// invalid use of type keyword
 					throw new TokenizerSyntaxError('Invalid type declaration', tokenizer);
 				}
+				
+				// push reference
+				tokenizer.get();
+				operands.push(new Reference(new Literal(token.value)));
 				break;
 				
 			    case TokenType.THIS:
@@ -455,19 +458,22 @@ package processing.parser {
 				tokenizer.get();
 
 				// check if this be a cast or a group
-				if (tokenizer.match(TokenType.TYPE))
+				var isArray:Boolean = tokenizer.peek(2).match(TokenType.ARRAY_DIMENSION);
+				if ((tokenizer.peek().match(TokenType.TYPE) ||
+				    (isArray && tokenizer.peek().match(TokenType.IDENTIFIER))) &&
+				    tokenizer.peek(2 + isArray).match(TokenType.RIGHT_PAREN))
 				{
 					// push casting operator
 					operators.push(TokenType.CAST);
 					// push operands
-					operands.push(tokenizer.currentToken.value);
+					operands.push(parseType());
 					tokenizer.match(TokenType.RIGHT_PAREN, true);
 					return scanOperand(operators, operands, stopAt, true);
 				}
-				else if (tokenizer.peek(1).match(TokenType.RIGHT_PAREN) && tokenizer.match(TokenType.IDENTIFIER))
+				else if (tokenizer.peek(2).match(TokenType.RIGHT_PAREN) && tokenizer.match(TokenType.IDENTIFIER))
 				{
-					// match parenthetical
-					var type:String = tokenizer.currentToken.value;
+					// match ambiguous parenthetical
+					var identifier:String = tokenizer.currentToken.value;
 					tokenizer.match(TokenType.RIGHT_PAREN, true);
 					
 					// check if this be a cast
@@ -476,15 +482,17 @@ package processing.parser {
 					{
 						// add operators
 						operators.push(TokenType.CAST);
-						operators = operators.concat(tmpOperators);
+						for each (var i:* in tmpOperators)
+							operators.push(i);
 						// add operands
-						operands.push(new Type(type));
-						operands = operands.concat(tmpOperands);
+						operands.push(new Type(identifier));
+						for each (var i:* in tmpOperands)
+							operands.push(i);
 						break;
 					}
 
 					// not a cast; add operand
-					operands.push(new Reference(new Literal(type)));
+					operands.push(new Reference(new Literal(identifier)));
 					break;
 				}
 				

@@ -1,0 +1,1 @@
+mxmlc -file-specs processing.as -warnings=false

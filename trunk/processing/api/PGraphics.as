@@ -259,26 +259,17 @@ package processing.api {
 			}*/
 		}
 	
-		public function loadImage( file )
+		public function loadImage( file:String ):PImage
 		{
-			//[TODO] this
-			/*
-			var img = document.getElementById(file);
-			if ( !img )
-				return;
-	
-			var h = img.height, w = img.width;
-	
-			var canvas = document.createElement("canvas");
-			canvas.width = w;
-			canvas.height = h;
-			var context = canvas.getContext("2d");
-	
-			context.drawImage( img, 0, 0 );
-			var data = buildImageObject( context.getImageData( 0, 0, w, h ) );
-			data.img = img;
-			return data;*/
-			return;
+			// attempt to load preloaded image
+			if (!applet || !applet.getImage(file))
+				return null;
+			
+			// create PImage object
+			var bitmap:BitmapData = applet.getImage(file);
+			var image:PImage = new PImage(bitmap.width, bitmap.height);
+			image.bitmapData = bitmap;
+			return image;
 		}
 		
 		// text
@@ -740,6 +731,7 @@ package processing.api {
 		{
 			// change image size (no need to preserve data)
 			bitmapData = new BitmapData( aWidth, aHeight);
+			dispatchEvent(new Event(flash.events.Event.RESIZE));
 			if (applet)
 				applet.bitmapData = bitmapData;
 		}

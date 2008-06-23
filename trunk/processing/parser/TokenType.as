@@ -82,6 +82,7 @@ package processing.parser {
 		public static const NUMBER:TokenType = new TokenType('NUMBER');
 		public static const STRING:TokenType = new TokenType('STRING');
 		public static const REGEXP:TokenType = new TokenType('REGEXP');
+		public static const ARRAY_DIMENSION:TokenType = new TokenType('[]');
 	
 		// operators
 		public static const NEWLINE:TokenType = new TokenType('\n');
