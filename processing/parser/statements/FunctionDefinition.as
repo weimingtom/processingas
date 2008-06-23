@@ -5,11 +5,11 @@ package processing.parser.statements
 	public class FunctionDefinition implements IExecutable
 	{
 		public var identifier:String;
-		public var type:*;
+		public var type:Type;
 		public var params:Array;
 		public var body:IExecutable;
 	
-		public function FunctionDefinition(i:String, t:*, p:Array, b:IExecutable) {
+		public function FunctionDefinition(i:String, t:Type, p:Array, b:IExecutable) {
 			identifier = i;
 			type = t;
 			params = p;

@@ -21,7 +21,7 @@ package processing.parser {
 			scanOperand = true;
 		}
 		
-		public function peek(onSameLine:Boolean = false, lookAhead:int = 1):Token {
+		public function peek(lookAhead:int = 1, onSameLine:Boolean = false):Token {
 			// init variables
 			var peekCursor:Number = cursor, peekLine:Number = line;
 			for (var token:Token; lookAhead; lookAhead--) {
@@ -67,11 +67,19 @@ package processing.parser {
 					// integer
 					token = new Token(TokenType.NUMBER, parseInt(match[0]));
 				}
-				else if ((match = /^\w+/(input)))
+				else if ((match = /^(\w+)((?:\[\]){0,3})/(input)))
 				{
-					// keyword/identifier
-					if (match[0] in TokenType.KEYWORDS)
+					// type declaration
+					if (match[1] in TokenType.TYPES)
+						token = new Token(TokenType.TYPE, new Type(TokenType.TYPES[match[1]], match[2].length / 2));
+					else if (match[2].length)
+						token = new Token(TokenType.TYPE, new Type(match[1], match[2].length / 2))
+						
+					// keyword
+					else if (match[0] in TokenType.KEYWORDS)
 						token = new Token(TokenType.KEYWORDS[match[0]], TokenType.KEYWORDS[match[0]].value);
+						
+					// identifier
 					else
 						token = new Token(TokenType.IDENTIFIER, match[0]);
 				}
@@ -156,7 +164,7 @@ package processing.parser {
 			if (doesMatch)
 				get();
 			else if (mustMatch)
-				throw new TokenizerSyntaxError('Missing ' + TokenType.getConstant(matchType));
+				throw new TokenizerSyntaxError('Missing ' + TokenType.getConstant(matchType), this);
 			return doesMatch;
 		}
 		

@@ -5,18 +5,16 @@ package processing.parser.statements
 	public class VariableDefinition implements IExecutable
 	{
 		public var identifier:String;
-		public var type:*;
-		public var isArray:Boolean;
+		public var type:Type;
 	
-		public function VariableDefinition(i:String, t:*, a:Boolean = false) {
+		public function VariableDefinition(i:String, t:Type) {
 			identifier = i;
 			type = t;
-			isArray = a;
 		}
 	
 		public function execute(context:ExecutionContext):*
 		{
-//[TODO] do something with type/array
+//[TODO] do something with type
 			// define variable (by default, 0)
 			context.scope[identifier] = 0;
 		}
