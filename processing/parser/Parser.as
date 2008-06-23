@@ -464,13 +464,16 @@ package processing.parser {
 					tokenizer.match(TokenType.RIGHT_PAREN, true);
 					return scanOperand(operators, operands, stopAt, true);
 				}
-				else if (tokenizer.match(TokenType.IDENTIFIER) && tokenizer.peek(1).match(TokenType.RIGHT_PAREN))
+				else if (tokenizer.peek(1).match(TokenType.RIGHT_PAREN) && tokenizer.match(TokenType.IDENTIFIER))
 				{
-					// check if this be a class cast or a group
+					// match parenthetical
 					var type:String = tokenizer.currentToken.value;
 					tokenizer.match(TokenType.RIGHT_PAREN, true);
+					
+					// check if this be a cast
 					var tmpOperators:Array = [], tmpOperands:Array = [];
-					if (scanOperand(tmpOperators, tmpOperands)) {
+					if (scanOperand(tmpOperators, tmpOperands))
+					{
 						// add operators
 						operators.push(TokenType.CAST);
 						operators = operators.concat(tmpOperators);
@@ -478,9 +481,13 @@ package processing.parser {
 						operands.push(new Type(type));
 						operands = operands.concat(tmpOperands);
 						break;
-					}						
-				}
+					}
 
+					// not a cast; add operand
+					operands.push(new Reference(new Literal(type)));
+					break;
+				}
+				
 				// parse parenthetical
 				operands.push(parseExpression(TokenType.RIGHT_PAREN));
 				if (!tokenizer.match(TokenType.RIGHT_PAREN))
@@ -506,7 +513,7 @@ package processing.parser {
 			// stop if token matches stop parameter
 			if (stopAt && token.match(stopAt))
 				return false;
-			
+
 			// switch based on type
 			switch (token.type) {				
 			    // assignment
