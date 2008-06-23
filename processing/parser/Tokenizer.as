@@ -67,14 +67,11 @@ package processing.parser {
 					// integer
 					token = new Token(TokenType.NUMBER, parseInt(match[0]));
 				}
-				else if ((match = /^(\w+)((?:\[\]){0,3})/(input)))
+				else if ((match = /^\w+/(input)))
 				{
-					// type declaration
-					if (match[1] in TokenType.TYPES)
-						token = new Token(TokenType.TYPE, new Type(TokenType.TYPES[match[1]], match[2].length / 2));
-					else if (match[2].length)
-						token = new Token(TokenType.TYPE, new Type(match[1], match[2].length / 2))
-						
+					// type
+					if (match[0] in TokenType.TYPES)
+						token = new Token(TokenType.TYPE, TokenType.TYPES[match[0]]);
 					// keyword
 					else if (match[0] in TokenType.KEYWORDS)
 						token = new Token(TokenType.KEYWORDS[match[0]], TokenType.KEYWORDS[match[0]].value);
@@ -82,6 +79,11 @@ package processing.parser {
 					// identifier
 					else
 						token = new Token(TokenType.IDENTIFIER, match[0]);
+				}
+				else if ((match = /^(?:\[\]){1,3}/(input)))
+				{
+					// array dimensions
+					token = new Token(TokenType.ARRAY_DIMENSION, match[0].length / 2);
 				}
 				else if ((match = /^'(?:[^']|\\.|\\u[0-9A-Fa-f]{4})'/(input)))
 				{
@@ -93,7 +95,7 @@ package processing.parser {
 					// string
 					token = new Token(TokenType.STRING, parseStringLiteral(match[0].substring(1, match[0].length - 1)));
 				}
-				else if ((match = /^(\n|\|\||&&|===?|!==?|<<|<=|>>>?|>=|\+\+|--|[;,?:|^&=<>+\-*\/%!~.[\]{}()])/(input)))
+				else if ((match = /^(\n|\|\||&&|===?|!==?|<<|<=|>>>?|>=|\+\+|--|\[\]|[;,?:|^&=<>+\-*\/%!~.[\]{}()])/(input)))
 				{
 					// operator
 					var op:String = match[0];

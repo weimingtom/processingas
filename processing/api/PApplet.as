@@ -6,6 +6,8 @@
 	import flash.events.Event;
 	import processing.api.PGraphics;
 	import processing.parser.ExecutionContext;
+	import flash.net.URLRequest;
+	import flash.display.Loader;
 
 	public class PApplet extends Bitmap {
 		public var graphics:PGraphics;
@@ -29,6 +31,14 @@
 		}
 		
 		public function start():void {
+			// attach event listeners
+			stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+			stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
+			addEventListener(Event.ENTER_FRAME, onEnterFrame);
+			
 			// set defaults
 			graphics.stroke(0);
 			graphics.fill(255);
@@ -46,14 +56,6 @@
 			{
 				redrawFrame();
 			}
-
-			// attach event listeners
-			stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
-			stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-			stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-			stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
-			addEventListener(Event.ENTER_FRAME, onEnterFrame);
 		}
 		
 		public function stop():void {
@@ -172,6 +174,17 @@
 			// end drawing
 			graphics.popMatrix();
 			graphics.endDraw();
+		}
+		
+		// image reference object
+		private var images:Object = new Object();
+		
+		public function loadImage(path:String, image:BitmapData):void {
+			images[path] = image;
+		}
+		
+		public function getImage(path:String):BitmapData {
+			return images[path];
 		}
 	}
 }
