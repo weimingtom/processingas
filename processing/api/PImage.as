@@ -64,10 +64,10 @@ package processing.api {
 
 		public function loadPixels() {
 			// serialize pixel array
-			pixels = new Array(width * height);
+			pixels = new Array();
 			for (var y:int = 0; y < height; y++)
 				for (var x:int = 0; x < width; x++)
-					pixels.push(get(x, y));
+					pixels.push(bitmapData.getPixel32(x, y));
 		}
 
 		public function updatePixels() {

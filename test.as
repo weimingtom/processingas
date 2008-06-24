@@ -17,7 +17,7 @@ package {
 		private var ProcessingText:Class;
 		
 		[Bindable]
-		[Embed(source="ystone08.jpg", mimeType="image/jpeg")]
+		[Embed(source="pollockShimmering.gif", mimeType="image/jpeg")]
 		private var ProcessingImage:Class;
 		
 		private var p:Processing;
@@ -28,13 +28,13 @@ package {
 			stage.addChild(p.applet);
 			
 			// preload images
-			p.applet.loadImage('ystone08.jpg', (new ProcessingImage).bitmapData);
+			p.applet.loadImage('pollockShimmering.gif', (new ProcessingImage).bitmapData);
 			
 			// load processing.js
 			var processingTextAsset:ByteArrayAsset = ByteArrayAsset(new ProcessingText());
 			var processingText:String = processingTextAsset.readUTFBytes(processingTextAsset.length);
 		
-			var debug:Boolean = false;
+			var debug:Boolean = true;
 			
 			if (!debug) {
 				// evaluate code

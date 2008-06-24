@@ -15,10 +15,19 @@ var ProcessingAS = {
 		ProcessingAS.object.height = h;
 	},
 	
-	loadScript: function (code) {
-		ProcessingAS.object.loadScript(code);
+	loadScript: function (code, images) {
+		ProcessingAS.object.loadScript(code, images);
 	}
 };
+
+function run(code) {
+	// sketchy loadImage pre-processing
+	var regex = /loadImage\(("[^"]+"|'[^']+')\)/g;
+	for (var matches, images = []; (matches = regex.exec(code)) != null; )
+		images.push(matches[1].substring(1, matches[1].length - 1));
+
+	ProcessingAS.loadScript(code, images);
+}
 
     </script>
   </head>
@@ -30,9 +39,7 @@ var ProcessingAS = {
       </object>
     </p>
     
-    <form onsubmit="ProcessingAS.loadScript(code.value); return false">
-      <textarea rows="30" cols="150" name="code"></textarea><br>
-      <input type="submit" value="Submit">
-    </form>
+    <textarea rows="30" cols="150" id="code"></textarea><br>
+    <input type="submit" value="Submit" onclick="run(document.getElementById('code').value); return false">
   </body>
 </html>

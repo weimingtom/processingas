@@ -18,9 +18,9 @@ package processing.parser.statements
 		public function execute(context:ExecutionContext):*
 		{
 			if (condition.execute(context))
-				thenBlock.execute(context);
+				return thenBlock.execute(context);
 			else if (elseBlock)
-				elseBlock.execute(context);
+				return elseBlock.execute(context);
 		}
 	}
 }

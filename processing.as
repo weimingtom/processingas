@@ -4,6 +4,10 @@ package {
 	import flash.external.ExternalInterface;
 	import flash.display.StageScaleMode;
 	import flash.events.Event;
+	import flash.events.*;
+	import flash.display.BitmapData;
+	import flash.display.Loader;
+	import flash.net.URLRequest;
 	
 	[SWF(width="0", height="0", frameRate="60", backgroundColor="#ffffff")]
 	
@@ -11,55 +15,49 @@ package {
 		public var p:Processing;
 
 		public function processing():void {
+			// initialize preloader
+			preloader = new Loader();
+			preloader.contentLoaderInfo.addEventListener(Event.COMPLETE, preloaderHandler);
+		
 			// set stage mode
 			stage.scaleMode = StageScaleMode.NO_SCALE;
 			
 			// initialize program
 			ExternalInterface.addCallback('loadScript', loadScript);
-			ExternalInterface.addCallback('preload', preload);
 			ExternalInterface.call('ProcessingAS.init');
 		}
 		
-		public function preload(... images):void {
-			// preload images
-			for each (var image in images)
-				preloadImage(image);
-			preloadCount += images.length;
-		}
-		
-		private var preloadCount:int = 0;
-		
-		public function preloadImage(path:String, closure:Function):void {
-			// preload image object
-			var ldr:Loader = new Loader();
-			var urlReq:URLRequest = new URLRequest(path);
-			ldr.addEventListener(Event.COMPLETE, function (e:Event):void {
-				// save preloaded image
-				var image:BitmapData = new BitmapData(ldr.content.width, ldr.content.height);
-				image.draw(ldr.content);
-				p.applet.loadImage(path, image);
-				
-				// decrease preload count
-				if (--preloadCount == 0)
-					ExternalInterface.call('ProcessingAS.preloadHandler');
-			});
-			ldr.load(urlReq);
-		}
-		
-		public function loadScript(code:String):void {
+		public function loadScript(script:String, images:Array = null):void {
 			// check if we need to reset
 			if (p)
 				reset();
-				
 			// create processing object
 			p = new Processing();
+			
+			// save current script
+			this.script = script;
+			
+			// start method
+			if (images && images.length) {
+				// preload images
+				preloadStack = images;
+				preloadImages();
+			} else {
+				// start immediately
+				startScript();
+			}
+		}
+		
+		private var script:String = '';
+		
+		private function startScript():void {
 		
 			// attach sprite to stage
 			addChild(p.applet);
 			p.applet.graphics.addEventListener(flash.events.Event.RESIZE, resizeHandler);
 			
 			// evaluate code
-			p.evaluate(code);
+			p.evaluate(script);
 			// start the Processing API
 			p.start();
 		}
@@ -82,6 +80,36 @@ package {
 			// move sprite
 			x = -(p.applet.graphics.width / 2);
 			y = -(p.applet.graphics.height / 2);
+		}
+		
+		private var preloadStack:Array = [];
+		private var preloader:Loader;
+		
+		public function preloadImages():void {
+			// check that there is an image to be loaded
+			if (!preloadStack.length) {
+				// done preloading
+				startScript();
+				return;
+			}
+		
+			// load image path
+			preloader.load(new URLRequest(preloadStack[preloadStack.length - 1]));
+		}
+		
+		private function preloaderHandler(e:Event):void {
+			// pop stack and save preloaded image
+			var path:String = preloadStack.pop();
+			var image:BitmapData = new BitmapData(preloader.content.width, preloader.content.height);
+			image.draw(preloader.content);
+			p.applet.loadImage(path, image);
+			
+			// preload next image
+			preloadImages();
+		}
+		
+		private function alert(e:*):void {
+			ExternalInterface.call('alert', e);
 		}
 	}
 }
