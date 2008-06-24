@@ -67,6 +67,26 @@ package processing.parser {
 				// push conditional
 				block.push(new Conditional(condition, thenBlock, elseBlock));
 				return block;
+				
+			    // while statement
+			    case TokenType.WHILE:
+				// match opening 'for' and '('
+				tokenizer.get();
+				tokenizer.match(TokenType.LEFT_PAREN, true);
+				
+				// match condition
+				var condition:IExecutable = parseExpression(TokenType.RIGHT_PAREN);
+				tokenizer.match(TokenType.RIGHT_PAREN, true);
+				// parse body
+				if (tokenizer.match(TokenType.LEFT_CURLY)) {
+					var body:Block = parseBlock(TokenType.RIGHT_CURLY);
+					tokenizer.match(TokenType.RIGHT_CURLY, true);
+				} else
+					var body:Block = parseStatement();
+
+				// push for loop
+				block.push(new Loop(condition, body));
+				return block;
 
 			    // for statement
 			    case TokenType.FOR:
@@ -612,6 +632,7 @@ package processing.parser {
 			    // increment/decrement
 			    case TokenType.INCREMENT:
 			    case TokenType.DECREMENT:
+//[TODO] actually this doesn't actually work! how do we do a postfix in the middle of an expression...
 				// postfix; reduce higher-precedence operators (using > and not >=, so postfix > prefix)
 				while (operators.length &&
 				    operators[operators.length - 1].precedence > token.type.precedence)
@@ -621,7 +642,27 @@ package processing.parser {
 //[TODO] is reducing immediately necessary? a matter of precedence...
 				operators.push(tokenizer.get().type);
 				reduceExpression(operators, operands);
-				break;
+				
+				// find next operator
+				return scanOperator(operators, operands, stopAt);
+				
+			    // hook/colon operator
+			    case TokenType.HOOK:
+				// reduce left-hand conditional
+				tokenizer.get();
+				while (operators.length)
+					reduceExpression(operators, operands);
+				var conditional:IExecutable = operands.pop();
+				// parse then block
+				var thenBlock:IExecutable = parseExpression(TokenType.COLON);
+				// parse else block
+				tokenizer.match(TokenType.COLON, true);
+				var elseBlock:IExecutable = parseExpression();
+				
+				// add conditional
+				operands.push(new Conditional(conditional, thenBlock, elseBlock));
+				// already matched expression
+				return false;
 			
 			    // call/instantiation
 			    case TokenType.LEFT_PAREN:

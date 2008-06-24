@@ -15,7 +15,7 @@ package processing.parser.statements
 			// get simplified reference
 			var ref:Array = reference.reduce(context);
 			// increment and return
-			return ++ref[1][ref[0]];
+			return (++ref[1][ref[0]]);
 		}
 	}
 }

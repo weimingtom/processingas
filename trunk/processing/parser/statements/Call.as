@@ -18,7 +18,6 @@ package processing.parser.statements
 			var parsedArgs:Array = [];
 			for each (var arg:IExecutable in args)
 				parsedArgs.push(arg.execute(context));
-		
 			// apply function
 			return method.execute(context).apply(context, parsedArgs);
 		}

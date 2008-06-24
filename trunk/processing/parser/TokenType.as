@@ -50,10 +50,6 @@ package processing.parser {
 					return constant.@name;
 			return null;
 		}
-		
-//		public static const KEYWORD = 1;
-//		public static const OPERATOR = 2;
-//		public static const ASSIGNMENT_OPERATOR = 6;
 
 //[TODO] eliminate these as tokens?
 		// EOF

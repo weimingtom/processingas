@@ -182,7 +182,7 @@ package processing.api {
 		}
 			
 		private function getColor( aValue, range ):Number {
-			return Math.round(255 * (aValue / range));
+			return PMath.constrain(Math.round(255 * (aValue / range)), 0, 255);
 		}
 		
 		public function createImage( w:int, h:int, mode = null ):PImage
@@ -269,6 +269,7 @@ package processing.api {
 			var bitmap:BitmapData = applet.getImage(file);
 			var image:PImage = new PImage(bitmap.width, bitmap.height);
 			image.bitmapData = bitmap;
+			image.loadPixels();
 			return image;
 		}
 		
@@ -335,8 +336,8 @@ package processing.api {
 			else if ( arguments.length >= 3 )
 			{
 				redRange = range1 ? range1 : redRange;
-				greenRange = range2 ? range2 : redRange;
-				blueRange = range3 ? range3 : redRange;
+				greenRange = range2 ? range2 : greenRange;
+				blueRange = range3 ? range3 : blueRange;
 				opacityRange = range4 ? range4 : opacityRange;
 			}
 		}
@@ -606,31 +607,51 @@ package processing.api {
 		{
 			bitmapData.setPixel32(x, y, curStrokeColor);
 		}
-/*
-		public function arc( x, y, width, height, start, stop )
+
+		// credit: http://casaframework.org/docs/org_casaframework_util_DrawUtil.html
+		public function arc( x:uint, y:uint, width:int, height:int, start:Number, stop:Number ):void
 		{
-			if ( width <= 0 )
-				return;
-	
 			if ( curEllipseMode == CORNER )
 			{
 				x += width / 2;
 				y += height / 2;
 			}
-	
-			curContext.beginPath();
+			else if ( curEllipseMode == RADIUS )
+			{
+				width /= 2;
+				height /= 2;
+			}
+			
+			// calculate variables
+			var xRadius:Number = width / 2, yRadius:Number = height / 2;
+			var arc:Number = start - stop;
+			var segs:Number = Math.ceil(Math.abs(arc) / (Math.PI / 4));
+			var theta:Number = arc / segs;
+			var ax:Number = x + Math.cos(start + Math.PI/2) * xRadius;
+			var ay:Number = y + Math.sin(-(start + Math.PI/2)) * yRadius;
+			var angle:Number = -(start + Math.PI/2), angleMid:Number;
 		
-			curContext.moveTo( x, y );
-			curContext.arc( x, y, curEllipseMode == CENTER_RADIUS ? width : width/2, start, stop, false );
-			
-			if ( doFill )
-				curContext.fill();
-				
-			if ( doStroke )
-				curContext.stroke();
-			
-			curContext.closePath();
-		}*/
+			// start drawing from center
+			beginShapeDrawing();
+			shape.graphics.moveTo(x, y);
+			shape.graphics.lineTo(ax, ay);
+			// draw curve segments
+			for (var i:int = 0; i < segs; i++)
+			{
+				angle += theta;
+				angleMid = angle - (theta * .5);
+			    
+				shape.graphics.curveTo(
+				    x + Math.cos(angleMid) * (xRadius / Math.cos(theta * .5)),
+				    y + Math.sin(angleMid) * (yRadius / Math.cos(theta * .5)),
+				    x + Math.cos(angle) * xRadius,
+				    y + Math.sin(angle) * yRadius
+				);
+			}
+			// end shape
+			shape.graphics.lineTo(x, y);
+			endShapeDrawing();
+		}
 		
 		public function line( x1:Number = 0, y1:Number = 0, x2:Number = 0, y2:Number = 0):void
 		{
@@ -727,8 +748,9 @@ package processing.api {
 				applet.stage.frameRate = aRate;
 		}
 
-		public function size( aWidth:Number, aHeight:Number ):void
+		public function size( aWidth:Number, aHeight:Number, type:Number = P2D ):void
 		{
+//[TODO] type?
 			// change image size (no need to preserve data)
 			bitmapData = new BitmapData( aWidth, aHeight);
 			dispatchEvent(new Event(flash.events.Event.RESIZE));

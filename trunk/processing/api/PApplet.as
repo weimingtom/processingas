@@ -28,6 +28,9 @@
 				mouseX: 0,
 				mouseY: 0
 			    }, new ExecutionContext(PMath, new ExecutionContext(graphics)));
+			    
+			// initialize images array
+			images = {};
 		}
 		
 		public function start():void {
@@ -177,7 +180,7 @@
 		}
 		
 		// image reference object
-		private var images:Object = new Object();
+		private var images:Object;
 		
 		public function loadImage(path:String, image:BitmapData):void {
 			images[path] = image;
