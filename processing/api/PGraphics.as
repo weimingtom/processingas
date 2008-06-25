@@ -8,7 +8,6 @@ package processing.api {
 	import flash.display.StageQuality;
 	import flash.geom.Rectangle;
 	import flash.geom.Matrix;
-	import flash.utils.getDefinitionByName;
 	import flash.events.Event;
 	import flash.geom.Point;
 
@@ -358,17 +357,13 @@ package processing.api {
 		
 		public function endShape( close = true )
 		{
-			// close shape
-			if ( pathOpen )
-			{
+			if ( curShapeCount != 0 && (close || doFill) ) 
 				shape.graphics.lineTo( firstX, firstY );
-				pathOpen = false;
-			}
 			
-			if ( curShapeCount != 0 )
-			{
+			if ( curShapeCount != 0  || pathOpen ) {
 				endShapeDrawing();
 				curShapeCount = 0;
+				pathOpen = false;
 			}
 		}
 		
@@ -443,14 +438,17 @@ package processing.api {
 				} else if ( arguments.length == 4 ) {
 					if ( curShapeCount > 1 ) {
 						shape.graphics.moveTo( prevX, prevY );
-//[TODO]						curContext.quadraticCurveTo( firstX, firstY, x, y );
 						shape.graphics.curveTo(firstX, firstY, x, y);
 						curShapeCount = 1;
 					}
 				} else if ( arguments.length == 6 ) {
-//[TODO]				curContext.bezierCurveTo( x, y, x2, y2, x3, y3 );
-					shape.graphics.curveTo((x + x2) / 2, (y + y2) / 2, x3, y3);
+					shape.graphics.lineTo(p0.x, p0.y); 
+					(new Bezier(shape.graphics)).drawCubicBezier(
+						new Point(prevX, prevY), new Point(x, y), new Point(x2, y2), new Point(x3, y3), 4);
 					curShapeCount = -1;
+					// make sure prevX/prevY are set to next point
+					x = x3;
+					y = y3;
 				}
 			}
 	
