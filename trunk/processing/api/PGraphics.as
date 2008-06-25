@@ -28,17 +28,23 @@ package processing.api {
 		}
 	
 		// drawing constants
-		public const P2D = 3;
+		public const PI = Math.PI;
+		public const TWO_PI = 2 * Math.PI;
+		public const HALF_PI = Math.PI / 2;
+		public const P2D = 2;
 		public const P3D = 3;
 		public const CORNER = 0;
-		public const CENTER = 1;
-		public const CENTER_RADIUS = 2;
-		public const RADIUS = 2;
-		public const POLYGON = 1;
+		public const RADIUS = 1;
+		public const CENTER_RADIUS = 1;
+		public const CENTER = 2;
+		public const POLYGON = 2;
+		public const QUADS = 5;
 		public const TRIANGLES = 6;
 		public const POINTS = 7;
 		public const LINES = 8;
 		public const TRIANGLE_STRIP = 9;
+		public const TRIANGLE_FAN = 4;
+		public const QUAD_STRIP = 3;
 		public const CORNERS = 10;
 		public const CLOSE = true;
 		public const RGB = 1;
@@ -58,10 +64,9 @@ package processing.api {
 		private var pathOpen:Boolean = false;
 		private var mousePressed:Boolean = false;
 		private var keyPressed:Boolean = false;
-		private var firstX:Number;
-		private var firstY:Number;
-		private var prevX:Number;
-		private var prevY:Number;
+		private var firstX:Number, firstY:Number;
+		private var secondX:Number, secondY:Number;
+		private var prevX:Number, prevY:Number;
 		private var curColorMode:Number = RGB;
 		private var curTint:Number = -1;
 		private var curTextSize:Number = 12;
@@ -140,6 +145,7 @@ package processing.api {
 				var r = getColor(colors[0], redRange);
 				var g = getColor(colors[1], greenRange);
 				var b = getColor(colors[2], blueRange);
+				
 				return (a << 24) + (r << 16) + (g << 8) + b;
 			}
 			else if ( args.length == 1 )
@@ -346,8 +352,8 @@ package processing.api {
 		{
 //[TODO] prevent other shapes from drawing until endShape
 			curShape = type;
-			curShapeCount = 0;
-			beginShapeDrawing();
+			curShapeCount = 0; 
+			curvePoints = [];
 		}
 		
 		public function endShape( close = true )
@@ -371,7 +377,10 @@ package processing.api {
 			if ( curShapeCount == 0 && curShape != POINTS )
 			{
 				pathOpen = true;
+				beginShapeDrawing();
 				shape.graphics.moveTo( x, y );
+				firstX = x;
+				firstY = y;
 			}
 			else
 			{
@@ -381,64 +390,125 @@ package processing.api {
 				}
 				else if ( arguments.length == 2 )
 				{
-					if ( curShape == TRIANGLE_STRIP && curShapeCount == 2 )
-					{
-						shape.graphics.moveTo( prevX, prevY );
-						shape.graphics.lineTo( firstX, firstY );
+					if ( curShape != QUAD_STRIP || curShapeCount != 2 )
+						shape.graphics.lineTo( x, y );
+	
+					if ( curShape == TRIANGLE_STRIP ) {
+						if ( curShapeCount == 2 ) {
+							// finish shape
+							endShape(CLOSE);
+							pathOpen = true;
+							beginShapeDrawing();
+							
+							// redraw last line to start next shape
+							shape.graphics.moveTo( prevX, prevY );
+							shape.graphics.lineTo( x, y );
+							curShapeCount = 1;
+						}
+						firstX = prevX;
+						firstY = prevY;
 					}
 	
-					shape.graphics.lineTo( x, y );
-				}
-				else if ( arguments.length == 4 )
-				{
-					if ( curShapeCount > 1 )
-					{
-						shape.graphics.moveTo( prevX, prevY );
-//[TODO]					shape.graphics.quadraticCurveTo( firstX, firstY, x, y );
+					if ( curShape == TRIANGLE_FAN && curShapeCount == 2 ) {
+						// finish shape
+						endShape(CLOSE);
+						pathOpen = true;
+						beginShapeDrawing();
+				
+						// redraw last line to start next shape
+						shape.graphics.moveTo( firstX, firstY );
+						shape.graphics.lineTo( x, y );
 						curShapeCount = 1;
 					}
-				}
-				else if ( arguments.length == 6 )
-				{
-//[TODO]				shape.graphics.bezierCurveTo( x, y, x2, y2, x3, y3 );
+			
+					if ( curShape == QUAD_STRIP && curShapeCount == 3 ) {
+						// finish shape
+						shape.graphics.lineTo( prevX, prevY );
+						endShape(CLOSE);
+						pathOpen = true;
+						beginShapeDrawing();
+			
+						// redraw lines to start next shape
+						shape.graphics.moveTo( prevX, prevY );
+						shape.graphics.lineTo( x, y );
+						curShapeCount = 1;
+					}
+	
+					if ( curShape == QUAD_STRIP) {
+						firstX = secondX;
+						firstY = secondY;
+						secondX = prevX;
+						secondY = prevY;
+					}
+				} else if ( arguments.length == 4 ) {
+					if ( curShapeCount > 1 ) {
+						shape.graphics.moveTo( prevX, prevY );
+//[TODO]						curContext.quadraticCurveTo( firstX, firstY, x, y );
+						shape.graphics.curveTo(firstX, firstY, x, y);
+						curShapeCount = 1;
+					}
+				} else if ( arguments.length == 6 ) {
+//[TODO]				curContext.bezierCurveTo( x, y, x2, y2, x3, y3 );
+					shape.graphics.curveTo((x + x2) / 2, (y + y2) / 2, x3, y3);
 					curShapeCount = -1;
 				}
 			}
 	
-			prevX = firstX;
-			prevY = firstY;
-			firstX = x;
-			firstY = y;
-	
-			
+			prevX = x;
+			prevY = y;
 			curShapeCount++;
 			
 			if ( curShape == LINES && curShapeCount == 2 ||
-					 (curShape == TRIANGLES || curShape == TRIANGLE_STRIP) && curShapeCount == 3 )
-			{
-				endShape();
-			}
-	
-			if ( curShape == TRIANGLE_STRIP && curShapeCount == 3 )
-			{
-				curShapeCount = 2;
+					 (curShape == TRIANGLES) && curShapeCount == 3 ||
+			 (curShape == QUADS) && curShapeCount == 4 ) {
+				endShape(CLOSE);
 			}
 		}
-	/*
-		public function curveTightness()
-		{
+		
+		private var curTightness:Number = 0;
+		private var curvePoints:Array = [];
+
+		public function curveVertex( x, y, x2 = null, y2 = null ):void {
+			if ( curvePoints.length < 3 ) {
+				curvePoints.push([x,y]);
+			} else {
+				var b = [], s = 1 - curTightness;
 	
+				/*
+				 * Matrix to convert from Catmull-Rom to cubic Bezier
+				 * where t = curTightness
+				 * |0				 1					0				 0			 |
+				 * |(t-1)/6	 1					(1-t)/6	 0			 |
+				 * |0				 (1-t)/6		1				 (t-1)/6 |
+				 * |0				 0					0				 0			 |
+				 */
+	
+				curvePoints.push([x,y]);
+	
+				b[0] = [curvePoints[1][0],curvePoints[1][1]];
+				b[1] = [curvePoints[1][0]+(s*curvePoints[2][0]-s*curvePoints[0][0])/6,curvePoints[1][1]+(s*curvePoints[2][1]-s*curvePoints[0][1])/6];
+				b[2] = [curvePoints[2][0]+(s*curvePoints[1][0]-s*curvePoints[3][0])/6,curvePoints[2][1]+(s*curvePoints[1][1]-s*curvePoints[3][1])/6];
+				b[3] = [curvePoints[2][0],curvePoints[2][1]];
+	
+				if ( !pathOpen ) {
+					vertex( b[0][0], b[0][1] );
+				} else {
+					curShapeCount = 1;
+				}
+	
+				vertex( b[1][0], b[1][1], b[2][0], b[2][1], b[3][0], b[3][1] );
+				curvePoints.shift();
+			}
 		}
 	
-		// [TODO] Unimplmented - not really possible with the Canvas API
-		public function curveVertex( x, y, x2, y2 )
-		{
-			vertex( x, y, x2, y2 );
+		public function curveTightness( tightness:Number ):void {
+			curTightness = tightness;
 		}
 	
 		public function bezierVertex(x, y, x2, y2, x3, y3 ) {
+//[TODO]
 			return vertex(x, y, x2, y2, x3, y3 );
-		}*/
+		}
 		
 		public function rectMode( aRectMode:Number ):void
 		{
