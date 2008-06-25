@@ -41,7 +41,17 @@ function run(code) {
     
     <p>Paste any Processing script into the textbox below. The script will be parsed and executed in the Processing flash file above.</p>
     
-    <textarea rows="30" cols="100" id="code"></textarea><br>
+    <textarea rows="30" cols="100" id="code">size(200, 200);
+smooth();
+background(0);
+strokeWeight(10);
+
+for(int i = 0; i &lt; width; i++) {
+  float r = random(255);
+  float x = random(0, width);
+  stroke(r, 100);
+  line(i, 0, x, height);
+}</textarea><br>
     <input type="submit" value="Run Code" onclick="run(document.getElementById('code').value); return false">
   </body>
 </html>
