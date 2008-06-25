@@ -41,12 +41,6 @@
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
 			addEventListener(Event.ENTER_FRAME, onEnterFrame);
-			
-			// set defaults
-			graphics.stroke(0);
-			graphics.fill(255);
-			graphics.noSmooth();
-			graphics.loop();
 		
 			// setup function
 			if (context.scope.setup)
@@ -158,7 +152,7 @@
 			}
 		}
 
-		public var enableLoop:Boolean = false;
+		public var enableLoop:Boolean = true;
 
 		private function onEnterFrame( e:Event )
 		{
