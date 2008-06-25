@@ -94,22 +94,18 @@ package {
 			}
 		
 			// load image path
-			preloader.load(new URLRequest(preloadStack[preloadStack.length - 1]));
+			preloader.load(new URLRequest(preloadStack[preloadStack.length - 1][1]));
 		}
 		
 		private function preloaderHandler(e:Event):void {
 			// pop stack and save preloaded image
-			var path:String = preloadStack.pop();
+			var path:Array = preloadStack.pop();
 			var image:BitmapData = new BitmapData(preloader.content.width, preloader.content.height);
 			image.draw(preloader.content);
-			p.applet.loadImage(path, image);
+			p.applet.loadImage(path[0], image);
 			
 			// preload next image
 			preloadImages();
-		}
-		
-		private function alert(e:*):void {
-			ExternalInterface.call('alert', e);
 		}
 	}
 }
